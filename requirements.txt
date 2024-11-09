@@ -1,0 +1,4 @@
+django
+easyocr
+torch
+pillow
