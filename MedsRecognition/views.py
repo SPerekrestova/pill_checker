@@ -1,6 +1,6 @@
 import io
 from django.shortcuts import render
-from .forms import ImageUploadForm
+from MedsRecognition.forms import ImageUploadForm
 from PIL import Image
 import easyocr
 
