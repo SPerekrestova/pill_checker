@@ -5,8 +5,18 @@
     <title>Result</title>
 </head>
 <body>
-    <h1>Extracted Text</h1>
-    <pre>{{ text }}</pre>
+    <h2>Extracted Text</h2>
+    <p>{{ text }}</p>
+    <h2>Active Ingredients Found</h2>
+{% if active_ingredients %}
+    <ul>
+    {% for ingredient in active_ingredients %}
+        <li>{{ ingredient }}</li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No active ingredients found.</p>
+{% endif %}
     <a href="{% url 'upload_image' %}">Upload Another Image</a>
 </body>
 </html>

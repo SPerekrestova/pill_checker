@@ -1,4 +1,4 @@
-django
-easyocr
-torch
-pillow
+django~=4.2.16
+easyocr~=1.7.2
+pillow~=11.0.0
+pandas~=2.2.3
