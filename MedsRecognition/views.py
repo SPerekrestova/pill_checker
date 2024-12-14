@@ -41,4 +41,4 @@ def upload_image(request):
 
 def recognise(extracted_text):
     active_ingredients = meds_recognition.find_active_ingredients(extracted_text)
-    return active_ingredients
+    return list(dict.fromkeys(active_ingredients))

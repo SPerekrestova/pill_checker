@@ -1,48 +1,55 @@
-import pandas as pd
 import re
+import requests
+import json
+import os
 
 class MedsRecognition:
-    DEFAULT_FILEPATH = 'MedsRecognition/resources/medicines.csv'
 
-    def __init__(self, filepath=None):
-        self.filepath = filepath or self.DEFAULT_FILEPATH
-        self.meds_df = self.load_data()
+    def __init__(self):
+        self.active_ingredients = MedsRecognition.fetch_active_ingredients()
 
-    def load_data(self):
+    @staticmethod
+    def fetch_active_ingredients():
+        if os.path.exists('active_ingredients.json'):
+            with open('active_ingredients.json', 'r') as file:
+                data = json.load(file) or {}
+                if data:
+                    return data
+
+        # If file doesn't exist or JSON is empty/invalid, fetch from API
+        return MedsRecognition.fetch_active_ingredients_from_api()
+
+    @staticmethod
+    def fetch_active_ingredients_from_api():
         try:
-            meds_df = pd.read_csv(self.filepath, sep=';')
-            # Validate that the column exists
-            if 'ActiveSubstance' not in meds_df.columns:
-                raise KeyError("The required column 'ActiveSubstance' is missing.")
+            url = "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=0&relaSource=ATC"
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            print(data)
+            ingredients = [
+                item['minConcept']['name']
+                for item in data.get('drugMemberGroup', {}).get('drugMember', [])
+                if 'minConcept' in item and 'name' in item['minConcept']
+            ]
+            with open('active_ingredients.json', 'w') as file:
+                json.dump(ingredients, file, indent=4)
+            return ingredients
+        except Exception as e:
+            raise ValueError(f"Error while fetching active ingredients from API: {e}")
 
-            # Convert all values in 'ActiveSubstance' to strings and handle NaN
-            meds_df['ActiveSubstance'] = meds_df['ActiveSubstance'].fillna('').astype(str)
-            return meds_df
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Error: File '{self.filepath}' not found.")
-        except pd.errors.ParserError:
-            raise ValueError("Error: Malformed CSV file.")
-
-    def search_by_name(self, name):
-        if self.meds_df is None:
-            raise ValueError("Data not loaded. Ensure the file exists.")
-        return self.meds_df[self.meds_df.NameOfMedicine == name].to_markdown()
-
-    def search_by_ingredient(self, ingredient):
-        if self.meds_df is None:
-            raise ValueError("Data not loaded. Ensure the file exists.")
-        return self.meds_df[self.meds_df.ActiveSubstance == ingredient].to_markdown()
 
     def find_active_ingredients(self, text):
-        if self.meds_df is None or 'ActiveSubstance' not in self.meds_df.columns:
-            raise ValueError("Active ingredients database is not loaded or incomplete.")
-
-        active_ingredients = []
-        for ingredient in self.meds_df['ActiveSubstance']:
-            # Skip non-string or empty values
-            if not isinstance(ingredient, str) or not ingredient.strip():
-                continue
-            # Check if the ingredient is in the text
-            if re.search(rf'\b{re.escape(ingredient)}\b', text, re.IGNORECASE):
-                active_ingredients.append(ingredient)
+        if not self.active_ingredients:
+            raise ValueError("Active ingredients list is not loaded.")
+        active_ingredients = [
+            ingredient
+            for ingredient in self.active_ingredients
+            if self._is_valid_ingredient(ingredient) and re.search(rf'\b{re.escape(ingredient)}\b', text, re.IGNORECASE)
+        ]
         return active_ingredients
+
+
+    @staticmethod
+    def _is_valid_ingredient(ingredient):
+        return isinstance(ingredient, str) and ingredient.strip()
