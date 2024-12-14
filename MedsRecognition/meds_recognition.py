@@ -12,7 +12,10 @@ class MedsRecognition:
     def fetch_active_ingredients():
         if os.path.exists('active_ingredients.json'):
             with open('active_ingredients.json', 'r') as file:
-                data = json.load(file) or {}
+                try:
+                    data = json.load(file) or {}
+                except (json.JSONDecodeError, ValueError):
+                    return MedsRecognition.fetch_active_ingredients_from_api()
                 if data:
                     return data
 
@@ -26,7 +29,6 @@ class MedsRecognition:
             response = requests.get(url)
             response.raise_for_status()
             data = response.json()
-            print(data)
             ingredients = [
                 item['minConcept']['name']
                 for item in data.get('drugMemberGroup', {}).get('drugMember', [])
