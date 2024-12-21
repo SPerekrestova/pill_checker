@@ -1,58 +1,107 @@
-# Text Recognition with Django and EasyOCR
+# MedsRecognition
 
-This project is a Django application that extracts text from uploaded images using EasyOCR.
+**MedsRecognition** is a Django-based application that extracts text from uploaded images using EasyOCR and identifies active ingredients in medications by querying a public database provided by RxNav. 
+
+> **Note:** This project is a work in progress. Some features may not yet be fully implemented or finalized.
+
+---
+
+## Table of Contents
+1. [Features](#features)  
+2. [Prerequisites](#prerequisites)  
+3. [Installation](#installation)  
+4. [How It Works](#how-it-works)  
+5. [Usage](#usage)  
+6. [Contact](#contact)
+
+---
 
 ## Features
-- Upload an image to extract text
-- Supports various image formats (JPEG, PNG, etc.)
-- Uses EasyOCR for accurate text recognition
+- Upload an image to extract text.  
+- Supports various image formats (JPEG, PNG, etc.).  
+- Leverages EasyOCR for highly accurate text recognition.  
+- Matches recognized text with a database of active ingredients from RxNav, a public resource.  
+
+---
 
 ## Prerequisites
-- Python 3.8+
-- Pip
+- Python 3.8+  
+- Pip (Python package manager)  
+
+---
 
 ## Installation
 
 1. Clone the repository:
-    ```bash
-    git clone https://github.com/SPerekrestova/MedsRecognition.git
-    cd text-recognition
-    ```
+   ```bash
+   git clone https://github.com/SPerekrestova/MedsRecognition.git
+   cd text-recognition
+   ```
 
 2. Install dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-3. Apply migrations:
-    ```bash
-    python manage.py migrate
-    ```
+3. Apply migrations (if applicable):  
+   If your app uses models and migrations, run:  
+   ```bash
+   python manage.py migrate
+   ```  
+   If no migrations are needed, skip this step.
 
 4. Run the Django server:
-    ```bash
-    python manage.py runserver
-    ```
+   ```bash
+   python manage.py runserver
+   ```
+
+---
+
+## How It Works
+
+1. **Upload Image**:  
+   - The user uploads an image containing text via the web interface.  
+   - Supported formats include JPEG, PNG, and others.  
+
+2. **Text Recognition**:  
+   - The uploaded image is processed by the EasyOCR library, which extracts text using pre-trained deep learning models.  
+   - EasyOCR identifies characters and words from the image, ensuring accuracy across multiple languages.  
+
+3. **Querying RxNav Database**:  
+   - Recognized text is matched against a list of active ingredients obtained from the RxNav public database.  
+   - The application queries RxNav’s API to fetch and update the list of active ingredients when needed.  
+   - This ensures up-to-date and reliable information for matching.  
+
+4. **Display Results**:  
+   - Once the text is extracted and matched with active ingredients, the results are displayed on a dedicated page.  
+   - Users can view the identified active ingredients or copy them for further use.  
+
+5. **Behind the Scenes**:  
+   - The Django application handles image uploads and server-side processing.  
+   - EasyOCR performs text recognition, while RxNav API integration ensures accurate identification of active ingredients.  
+
+---
 
 ## Usage
-1. Go to `http://localhost:8000/`.
-2. Upload an image to extract text.
 
-## License
-This project is licensed under a Proprietary License.
+1. Launch the application by running the Django server:
+   ```bash
+   python manage.py runserver
+   ```
 
-Proprietary Software License
+2. Open your web browser and navigate to:
+   ```
+   http://localhost:8000/
+   ```
 
-Copyright (c) 2024 Svetlana Perekrestova
+3. Upload an image containing text.  
+4. The extracted text will be displayed on the results page along with matched active ingredients.
 
-All rights reserved. This software is the proprietary information of Svetlana Perekrestova. Unauthorized copying of this software, via any medium, is strictly prohibited. This software may not be used, modified, or distributed without permission.
-
-This software is provided "as is," without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement. In no event shall the authors be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
-
-## Contribution
-Contributions are currently not accepted as this is proprietary software. If you have any questions or wish to discuss potential collaboration, please contact me directly.
+---
 
 ## Contact
 
-Author: Svetlana Perekrestova 
-Email: `svetlana.perekrestova2@gmail.com`
+**Author**: Svetlana Perekrestova  
+**Email**: [svetlana.perekrestova2@gmail.com](mailto:svetlana.perekrestova2@gmail.com)  
+
+---
