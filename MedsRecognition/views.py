@@ -24,7 +24,7 @@ def extract_text_with_easyocr(image):
     return " ".join(results)
 
 
-@csrf_exempt
+@csrf_exempt # DEVELOPMENT ONLY 403 ERROR DISABLE
 def upload_image(request):
     if request.method == 'POST':
         form = ImageUploadForm(request.POST, request.FILES)
