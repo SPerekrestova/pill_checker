@@ -17,9 +17,9 @@ class MedsRecognitionTestCase(TestCase):
              patch("builtins.open", mock_open(read_data='{"ingredients": ["Paracetamol", "Ibuprofen"]}')):
             result = self.meds_recognition_instance.fetch_active_ingredients()
 
-        self.assertIsInstance(result, list, "Result should be a list.")
-        self.assertIn("Paracetamol", result, "'Paracetamol' should be in the result.")
-        self.assertIn("Ibuprofen", result, "'Ibuprofen' should be in the result.")
+        self.assertIsInstance(result, dict, "Result should be a dict.")
+        self.assertIn("ingredients", result, "Dictionary must have 'ingredients' key.")
+        self.assertIsInstance(result["ingredients"], list, "'ingredients' should be a list.")
 
     def test_uploaded_image_model_fields(self):
         """Test the UploadedImage model field behavior."""
@@ -42,13 +42,16 @@ class MedsRecognitionTestCase(TestCase):
     def test_fetch_active_ingredients_when_no_file_and_no_data(self):
         """Test that the function calls API when no file exists."""
         with patch("os.path.exists", return_value=False), \
-             patch("MedsRecognition.meds_recognition.MedsRecognition.fetch_active_ingredients_from_api",
-                   return_value={"ingredients": [{"name": "Ibuprofen"}]}) as mock_fetch_api:
+                patch("MedsRecognition.meds_recognition.MedsRecognition.fetch_active_ingredients_from_api",
+                      return_value={"ingredients": [{"name": "Ibuprofen"}]}) as mock_fetch_api:
             result = self.meds_recognition_instance.fetch_active_ingredients()
 
         mock_fetch_api.assert_called_once()
-        self.assertIsInstance(result, list, "Result should be a list.")
-        self.assertIn("Ibuprofen", result, "'Ibuprofen' should be in the result.")
+        self.assertIsInstance(result, dict, "Result should be a dict.")
+
+        # Gather the 'name' field from each dictionary under 'ingredients'
+        ingredients_list = [item["name"] for item in result["ingredients"]]
+        self.assertIn("Ibuprofen", ingredients_list, "'Ibuprofen' should be in the result.")
 
     def test_scanned_medication_model_integration(self):
         """Test integration of ScannedMedication model with mocked API response."""
@@ -64,11 +67,11 @@ class MedsRecognitionTestCase(TestCase):
         with patch("requests.get", return_value=mock_response):
             ScannedMedication.objects.create(
                 user=CustomUser.objects.create(username="test_user"),
-                data=mock_response.json.return_value
+                prescription_details=mock_response.json.return_value
             )
 
         medication = ScannedMedication.objects.last()
-        medication_data = medication.data
+        medication_data = medication.prescription_details
         result = [drug["minConcept"]["name"] for drug in medication_data["drugMember"]]
 
         self.assertIsInstance(result, list, "Result should be a list.")
@@ -103,12 +106,12 @@ class MedsRecognitionTestCase(TestCase):
         UploadedImage.objects.create(file_path="path/to/image.jpg")
         medication = ScannedMedication.objects.create(
             user=user,
-            data={"ingredients": ["Aspirin", "Ciprofloxacin"]}
+            prescription_details={"ingredients": ["Aspirin", "Ciprofloxacin"]}
         )
 
         self.assertEqual(medication.user, user, "Scanned medication should be linked to the correct user.")
         self.assertEqual(
-            medication.data["ingredients"],
+            medication.prescription_details["ingredients"],
             ["Aspirin", "Ciprofloxacin"],
             "Medication data should match the expected ingredients."
         )
