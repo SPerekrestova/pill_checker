@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard</title>
+</head>
+<body>
+    <h1>Welcome, {{ request.user.username }}!</h1>
+
+    <p>
+        <a href="{% url 'upload_image' %}">Scan New Medication</a> |
+        <a href="{% url 'logout' %}">Log Out</a>
+    </p>
+
+    <h2>Your Scanned Medications</h2>
+
+    {% if medications %}
+        <ul>
+            {% for medication in medications %}
+                <li>
+                    <strong>{{ medication.medication_name }}</strong><br>
+                    <em>Scanned on:</em> {{ medication.scan_date }}<br>
+                    <em>Dosage:</em> {{ medication.dosage|default:"N/A" }}<br>
+                    <em>Prescription Details:</em> {{ medication.prescription_details|default:"N/A" }}
+                </li>
+                <hr>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You have no scanned medications yet. <a href="{% url 'upload_image' %}">Scan one now!</a></p>
+    {% endif %}
+</body>
+</html>
