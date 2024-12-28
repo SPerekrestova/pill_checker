@@ -1,0 +1,25 @@
+<!-- recognition/login.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <h2>Login</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <p>
+            <label for="id_email">Email:</label>
+            <input type="email" name="email" id="id_email" required>
+        </p>
+        <p>
+            <label for="id_password">Password:</label>
+            <input type="password" name="password" id="id_password" required>
+        </p>
+        <button type="submit">Login</button>
+    </form>
+    {% for message in messages %}
+      <p>{{ message }}</p>
+    {% endfor %}
+</body>
+</html>
