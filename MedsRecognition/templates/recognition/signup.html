@@ -1,0 +1,29 @@
+<!-- recognition/signup.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up</title>
+</head>
+<body>
+    <h2>Sign Up</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <p>
+            <label for="id_email">Email:</label>
+            <input type="email" name="email" id="id_email" required>
+        </p>
+        <p>
+            <label for="id_username">Username (optional):</label>
+            <input type="text" name="username" id="id_username">
+        </p>
+        <p>
+            <label for="id_password">Password:</label>
+            <input type="password" name="password" id="id_password" required>
+        </p>
+        <button type="submit">Sign Up</button>
+    </form>
+    {% for message in messages %}
+      <p>{{ message }}</p>
+    {% endfor %}
+</body>
+</html>

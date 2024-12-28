@@ -16,6 +16,7 @@ class CustomUser(AbstractUser):
     full_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
+    supabase_user_id = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.username

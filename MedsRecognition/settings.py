@@ -1,5 +1,15 @@
 import os
 from pathlib import Path
+from supabase import create_client, Client
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(dotenv_path='MedsRecognition/.env')
+
+SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://xyzcompany.supabase.co')
+SUPABASE_KEY = os.environ.get('SUPABASE_ANON_KEY', 'YOUR_SUPABASE_ANON_OR_SERVICE_KEY')
+
+SUPABASE_CLIENT = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
