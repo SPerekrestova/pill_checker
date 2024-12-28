@@ -5,7 +5,7 @@ from MedsRecognition.meds_recognition import MedsRecognition
 from PIL import Image
 import io
 import easyocr
-from MedsRecognition.models import ScannedMedication  # Import the ScannedMedication model
+from MedsRecognition.models import ScannedMedication
 from django.db.models import F
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
@@ -13,10 +13,13 @@ from django.contrib import messages
 from django.contrib.auth import login as django_login, authenticate
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from MedsRecognition.supabase_utils import get_supabase_client
 
 
 reader = easyocr.Reader(['en'], gpu=True)
 meds_recognition = MedsRecognition()
+User = get_user_model()
+supabase = get_supabase_client()
 
 
 def extract_text_with_easyocr(image):
@@ -29,10 +32,6 @@ def extract_text_with_easyocr(image):
 
     results = reader.readtext(image_bytes.read(), detail=0)
     return " ".join(results)
-
-
-User = get_user_model()
-supabase = settings.supabase  # Our Client from the settings
 
 
 def supabase_signup_view(request):
@@ -85,6 +84,7 @@ def supabase_signup_view(request):
 
     return render(request, 'recognition/signup.html')
 
+
 def supabase_login_view(request):
     """
     A view that authenticates with Supabase, then logs in user via Django session.
@@ -94,7 +94,7 @@ def supabase_login_view(request):
         password = request.POST.get('password')
         try:
             # 1) Sign in with Supabase
-            result = settings.supabase.auth.sign_in_with_password({
+            result = supabase.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
@@ -149,7 +149,7 @@ def upload_image(request):
 @login_required
 def user_dashboard(request):
     medications = ScannedMedication.objects.filter(user=request.user).order_by(F('scan_date').desc())
-    return render(request, 'dashboard.html', {'medications': medications})
+    return render(request, 'recognition/dashboard.html', {'medications': medications})
 
 
 def recognise(extracted_text):
