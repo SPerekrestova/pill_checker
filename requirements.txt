@@ -4,3 +4,4 @@ pillow~=11.0.0
 pytest~=8.3.4
 requests~=2.32.3
 supabase~=2.10.0
+django-cors-headers~=4.6.0
