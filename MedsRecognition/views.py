@@ -1,20 +1,20 @@
+import io
+
+import easyocr
+from PIL import Image
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth import login
+from django.contrib.auth import login as django_login
 from django.contrib.auth.decorators import login_required
+from django.db.models import F
 from django.shortcuts import render, redirect
+
+from MedsRecognition.auth_service import sign_up_user, sign_in_user
 from MedsRecognition.forms import ImageUploadForm
 from MedsRecognition.meds_recognition import MedsRecognition
-from PIL import Image
-import io
-import easyocr
 from MedsRecognition.models import ScannedMedication
-from django.db.models import F
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib import messages
-from django.contrib.auth import login as django_login, authenticate
-from django.contrib.auth import get_user_model
-from django.conf import settings
-from MedsRecognition.supabase_utils import get_supabase_client
-
+from MedsRecognition.supabase_client import get_supabase_client
 
 reader = easyocr.Reader(['en'], gpu=True)
 meds_recognition = MedsRecognition()
@@ -46,12 +46,8 @@ def supabase_signup_view(request):
 
         # 1) Sign up with Supabase
         try:
-            result = supabase.auth.sign_up(
-                {
-                    "email": email,
-                    "password": password
-                }
-            )
+            result = sign_up_user(email, password)
+
             # If sign_up is successful, Supabase returns user data with an "id" or "user" field
             if result and result.user:
                 supabase_user_id = result.user.id
@@ -70,10 +66,6 @@ def supabase_signup_view(request):
                     if not user.supabase_user_id:
                         user.supabase_user_id = supabase_user_id
                         user.save()
-
-                # 3) Auto-login the user in Django
-                # We can call authenticate(...) if needed, but because we just created them,
-                # we can forcibly log them in:
                 django_login(request, user)
                 messages.success(request, "Signed up and logged in successfully.")
                 return redirect('dashboard')  # or wherever
@@ -94,13 +86,9 @@ def supabase_login_view(request):
         password = request.POST.get('password')
         try:
             # 1) Sign in with Supabase
-            result = supabase.auth.sign_in_with_password({
-                "email": email,
-                "password": password
-            })
+            result = sign_in_user(email, password)
             if result and result.user:
                 # 2) Find local Django user
-                User = get_user_model()
                 local_user = User.objects.filter(email=email).first()
                 if local_user:
                     # 3) Use Django's session-based login

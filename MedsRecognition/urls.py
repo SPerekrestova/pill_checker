@@ -8,6 +8,6 @@ urlpatterns = [
     path('upload/', views.upload_image, name='upload_image'),
     path('dashboard/', views.user_dashboard, name='dashboard'),
     path('signup/', views.supabase_signup_view, name='signup'),
-    path('login/', views.supabase_login_view, name='login'),
+    path('accounts/login/', views.supabase_login_view, name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
