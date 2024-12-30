@@ -58,6 +58,7 @@ DATABASES = {
 WSGI_APPLICATION = 'MedsRecognition.wsgi.application'
 
 STATIC_URL = '/static/'
+LOGIN_URL = '/accounts/login/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
