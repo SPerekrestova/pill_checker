@@ -3,9 +3,6 @@ import io
 import easyocr
 from PIL import Image
 from django.contrib import messages
-from django.contrib.auth import get_user_model
-from django.contrib.auth import login
-from django.contrib.auth import login as django_login
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
 from django.shortcuts import render, redirect
@@ -14,12 +11,6 @@ from MedsRecognition.auth_service import sign_up_user, sign_in_user
 from MedsRecognition.forms import ImageUploadForm
 from MedsRecognition.meds_recognition import MedsRecognition
 from MedsRecognition.models import ScannedMedication
-from MedsRecognition.supabase_client import get_supabase_client
-
-reader = easyocr.Reader(['en'], gpu=True)
-meds_recognition = MedsRecognition()
-User = get_user_model()
-supabase = get_supabase_client()
 
 
 def extract_text_with_easyocr(image):
@@ -30,45 +21,22 @@ def extract_text_with_easyocr(image):
     image.save(image_bytes, format='JPEG')
     image_bytes.seek(0)
 
+    reader = easyocr.Reader(['en'], gpu=True)
     results = reader.readtext(image_bytes.read(), detail=0)
     return " ".join(results)
 
 
 def supabase_signup_view(request):
-    """
-    A view to sign up a new user using Supabase auth.
-    We also create a local Django user record so we can manage sessions easily.
-    """
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-        username = request.POST.get('username', email)  # or any logic you prefer
+        username = request.POST.get('username', email)
 
-        # 1) Sign up with Supabase
         try:
             result = sign_up_user(email, password)
-
-            # If sign_up is successful, Supabase returns user data with an "id" or "user" field
             if result and result.user:
-                supabase_user_id = result.user.id
-
-                # 2) Create or update local Django user
-                user, created = User.objects.get_or_create(
-                    email=email,
-                    defaults={
-                        'username': username,
-                        'supabase_user_id': supabase_user_id
-                    }
-                )
-
-                if not created:
-                    # If user already exists, update the supabase_user_id if missing
-                    if not user.supabase_user_id:
-                        user.supabase_user_id = supabase_user_id
-                        user.save()
-                django_login(request, user)
-                messages.success(request, "Signed up and logged in successfully.")
-                return redirect('dashboard')  # or wherever
+                messages.success(request, "Signed up successfully. Please log in.")
+                return redirect('login')
             else:
                 messages.error(request, "Sign-up failed. Check your email/password.")
         except Exception as e:
@@ -78,25 +46,15 @@ def supabase_signup_view(request):
 
 
 def supabase_login_view(request):
-    """
-    A view that authenticates with Supabase, then logs in user via Django session.
-    """
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
         try:
-            # 1) Sign in with Supabase
             result = sign_in_user(email, password)
-            if result and result.user:
-                # 2) Find local Django user
-                local_user = User.objects.filter(email=email).first()
-                if local_user:
-                    # 3) Use Django's session-based login
-                    login(request, local_user)
-                    messages.success(request, "Successfully logged in!")
-                    return redirect('dashboard')
-                else:
-                    messages.error(request, "No local user found. Please sign up.")
+            if result and hasattr(result, 'user'):
+                request.session['supabase_user'] = result.user.id
+                messages.success(request, "Successfully logged in!")
+                return redirect('dashboard')
             else:
                 messages.error(request, "Invalid credentials or login failed.")
         except Exception as e:
@@ -141,5 +99,5 @@ def user_dashboard(request):
 
 
 def recognise(extracted_text):
-    active_ingredients = meds_recognition.find_active_ingredients(extracted_text)
+    active_ingredients = MedsRecognition().find_active_ingredients(extracted_text)
     return list(dict.fromkeys(active_ingredients))

@@ -1,7 +1,8 @@
+from django.contrib.auth.models import User
 from django.test import TestCase
 from unittest.mock import patch, MagicMock, mock_open
 
-from MedsRecognition.models import UploadedImage, CustomUser, ScannedMedication
+from MedsRecognition.models import UploadedImage, ScannedMedication
 from MedsRecognition.meds_recognition import MedsRecognition
 
 
@@ -66,7 +67,7 @@ class MedsRecognitionTestCase(TestCase):
         # Mock an API call with requests.get
         with patch("requests.get", return_value=mock_response):
             ScannedMedication.objects.create(
-                user=CustomUser.objects.create(username="test_user"),
+                user=User.objects.create(username="test_user"),
                 prescription_details=mock_response.json.return_value
             )
 
@@ -80,8 +81,8 @@ class MedsRecognitionTestCase(TestCase):
         self.assertIn("Amoxicillin", result, "'Amoxicillin' should be in the result.")
 
     def test_custom_user_model_fields(self):
-        """Test functionality of CustomUser model fields."""
-        user = CustomUser.objects.create(username="test_user", email="test@example.com")
+        """Test functionality of User model fields."""
+        user = User.objects.create(username="test_user", email="test@example.com")
         self.assertEqual(user.username, "test_user", "Username should match.")
         self.assertEqual(user.email, "test@example.com", "Email should match.")
 
@@ -102,7 +103,7 @@ class MedsRecognitionTestCase(TestCase):
 
     def test_integration_of_all_models(self):
         """Test integration of all models together."""
-        user = CustomUser.objects.create(username="test_user", email="test@example.com")
+        user = User.objects.create(username="test_user", email="test@example.com")
         UploadedImage.objects.create(file_path="path/to/image.jpg")
         medication = ScannedMedication.objects.create(
             user=user,
