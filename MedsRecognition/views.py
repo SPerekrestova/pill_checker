@@ -5,9 +5,10 @@ from PIL import Image
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 
 from MedsRecognition.auth_service import sign_up_user, sign_in_user
+from MedsRecognition.decorators import supabase_login_required
 from MedsRecognition.forms import ImageUploadForm
 from MedsRecognition.meds_recognition import MedsRecognition
 from MedsRecognition.models import ScannedMedication
@@ -36,7 +37,7 @@ def supabase_signup_view(request):
             result = sign_up_user(email, password)
             if result and result.user:
                 messages.success(request, "Signed up successfully. Please log in.")
-                return redirect('login')
+                return render(request, 'recognition/login.html')
             else:
                 messages.error(request, "Sign-up failed. Check your email/password.")
         except Exception as e:
@@ -53,8 +54,9 @@ def supabase_login_view(request):
             result = sign_in_user(email, password)
             if result and hasattr(result, 'user'):
                 request.session['supabase_user'] = result.user.id
+                request.user = result.user
                 messages.success(request, "Successfully logged in!")
-                return redirect('dashboard')
+                return render(request, 'recognition/dashboard.html')
             else:
                 messages.error(request, "Invalid credentials or login failed.")
         except Exception as e:
@@ -62,7 +64,7 @@ def supabase_login_view(request):
     return render(request, 'recognition/login.html')
 
 
-@login_required
+@supabase_login_required
 def upload_image(request):
     if request.method == 'POST':
         form = ImageUploadForm(request.POST, request.FILES)
@@ -92,7 +94,7 @@ def upload_image(request):
     return render(request, 'recognition/upload.html', {'form': form})
 
 
-@login_required
+@supabase_login_required
 def user_dashboard(request):
     medications = ScannedMedication.objects.filter(user=request.user).order_by(F('scan_date').desc())
     return render(request, 'recognition/dashboard.html', {'medications': medications})

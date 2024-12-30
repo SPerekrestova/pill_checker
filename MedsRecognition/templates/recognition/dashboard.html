@@ -7,8 +7,7 @@
     <h1>Welcome, {{ request.user.username }}!</h1>
 
     <p>
-        <a href="{% url 'upload_image' %}">Scan New Medication</a> |
-<!--        <a href="{% url 'logout' %}">Log Out</a>-->
+        <a href="{% url 'logout' %}">Log Out</a>
     </p>
 
     <h2>Your Scanned Medications</h2>
@@ -26,7 +25,7 @@
             {% endfor %}
         </ul>
     {% else %}
-        <p>You have no scanned medications yet. <a href="{% url 'upload_image' %}">Scan one now!</a></p>
+        <p>You have no scanned medications yet. <a href="{% url 'upload' %}">Scan one now!</a></p>
     {% endif %}
 </body>
 </html>
