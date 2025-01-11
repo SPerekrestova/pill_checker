@@ -9,7 +9,7 @@ def supabase_login_required(view_func):
         if not supabase_user:
             return redirect('login')
         try:
-            request.auth_user = Profile.objects.get(id=supabase_user['id'])
+            request.auth_user = Profile.objects.get(user_id=supabase_user)
         except Profile.DoesNotExist:
             return redirect('login')
         return view_func(request, *args, **kwargs)

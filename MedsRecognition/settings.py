@@ -10,6 +10,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.contenttypes',
+    'django.contrib.auth',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'MedsRecognition',
@@ -59,7 +60,7 @@ DATABASES = {
 WSGI_APPLICATION = 'MedsRecognition.wsgi.application'
 
 STATIC_URL = '/static/'
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = '/login/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
