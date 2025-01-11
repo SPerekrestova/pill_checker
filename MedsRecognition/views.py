@@ -3,7 +3,6 @@ import io
 import easyocr
 from PIL import Image
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.db.models import F
 from django.shortcuts import render
 
@@ -76,19 +75,17 @@ def upload_image(request):
             extracted_text = extract_text_with_easyocr(image)
             active_ingredients = recognise(extracted_text)
 
-            # Save scanned medication to the database
             ScannedMedication.objects.create(
-                user=request.user,  # Associate with the logged-in user
-                medication_name="Extracted Medication",  # This can be refined as per your logic
-                dosage=", ".join(active_ingredients),  # Join active ingredients into a string
+                profile=request.auth_user,
+                medication_name="Extracted Medication",
+                dosage=", ".join(active_ingredients),
                 prescription_details=extracted_text,
             )
 
-            return render(request, 'recognition/result.html',
-                          {
-                              'text': extracted_text,
-                              'active_ingredients': active_ingredients
-                          })
+            return render(request, 'recognition/result.html', {
+                'text': extracted_text,
+                'active_ingredients': active_ingredients
+            })
     else:
         form = ImageUploadForm()
     return render(request, 'recognition/upload.html', {'form': form})
@@ -96,7 +93,7 @@ def upload_image(request):
 
 @supabase_login_required
 def user_dashboard(request):
-    medications = ScannedMedication.objects.filter(user=request.user).order_by(F('scan_date').desc())
+    medications = ScannedMedication.objects.filter(profile=request.user).order_by(F('scan_date').desc())
     return render(request, 'recognition/dashboard.html', {'medications': medications})
 
 
