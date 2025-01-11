@@ -4,7 +4,7 @@
     <title>User Dashboard</title>
 </head>
 <body>
-    <h1>Welcome, {{ request.user.username }}!</h1>
+    <h1>Welcome, {{ request.auth_user.display_name }}!</h1>
 
     <p>
         <a href="{% url 'logout' %}">Log Out</a>

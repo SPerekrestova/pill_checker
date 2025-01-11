@@ -3,15 +3,15 @@ import io
 import easyocr
 from PIL import Image
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.db.models import F
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import logout
 
 from MedsRecognition.auth_service import sign_up_user, sign_in_user
 from MedsRecognition.decorators import supabase_login_required
-from MedsRecognition.forms import ImageUploadForm
+from MedsRecognition.forms import ImageUploadForm, ProfileUpdateForm
 from MedsRecognition.meds_recognition import MedsRecognition
-from MedsRecognition.models import ScannedMedication
+from MedsRecognition.models import ScannedMedication, Profile
 
 
 def extract_text_with_easyocr(image):
@@ -36,6 +36,8 @@ def supabase_signup_view(request):
         try:
             result = sign_up_user(email, password)
             if result and result.user:
+                # Create a profile for the new user
+                Profile.objects.create(user_id=result.user.id, display_name=username)
                 messages.success(request, "Signed up successfully. Please log in.")
                 return render(request, 'recognition/login.html')
             else:
@@ -55,8 +57,12 @@ def supabase_login_view(request):
             if result and hasattr(result, 'user'):
                 request.session['supabase_user'] = result.user.id
                 request.user = result.user
+
+                # Ensure the profile exists
+                Profile.objects.get_or_create(user_id=result.user.id, defaults={'display_name': email})
+
                 messages.success(request, "Successfully logged in!")
-                return render(request, 'recognition/dashboard.html')
+                return redirect('dashboard')
             else:
                 messages.error(request, "Invalid credentials or login failed.")
         except Exception as e:
@@ -76,19 +82,17 @@ def upload_image(request):
             extracted_text = extract_text_with_easyocr(image)
             active_ingredients = recognise(extracted_text)
 
-            # Save scanned medication to the database
             ScannedMedication.objects.create(
-                user=request.user,  # Associate with the logged-in user
-                medication_name="Extracted Medication",  # This can be refined as per your logic
-                dosage=", ".join(active_ingredients),  # Join active ingredients into a string
+                profile=request.auth_user,
+                medication_name="Extracted Medication",
+                dosage=", ".join(active_ingredients),
                 prescription_details=extracted_text,
             )
 
-            return render(request, 'recognition/result.html',
-                          {
-                              'text': extracted_text,
-                              'active_ingredients': active_ingredients
-                          })
+            return render(request, 'recognition/result.html', {
+                'text': extracted_text,
+                'active_ingredients': active_ingredients
+            })
     else:
         form = ImageUploadForm()
     return render(request, 'recognition/upload.html', {'form': form})
@@ -96,10 +100,33 @@ def upload_image(request):
 
 @supabase_login_required
 def user_dashboard(request):
-    medications = ScannedMedication.objects.filter(user=request.user).order_by(F('scan_date').desc())
+    medications = ScannedMedication.objects.filter(profile=request.auth_user).order_by(F('scan_date').desc())
     return render(request, 'recognition/dashboard.html', {'medications': medications})
 
 
 def recognise(extracted_text):
     active_ingredients = MedsRecognition().find_active_ingredients(extracted_text)
     return list(dict.fromkeys(active_ingredients))
+
+
+def index(request):
+    return render(request, 'recognition/index.html')
+
+
+def supabase_logout_view(request):
+    logout(request)
+    return render(request, 'recognition/logout.html')
+
+
+@supabase_login_required
+def update_profile(request):
+    profile = Profile.objects.get(user_id=request.user.id)
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated successfully.")
+            return redirect('dashboard')
+    else:
+        form = ProfileUpdateForm(instance=profile)
+    return render(request, 'recognition/update_profile.html', {'form': form})
