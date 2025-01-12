@@ -1,77 +1,188 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>User Dashboard</title>
+    <!--
+        1. Include a Google Font (Roboto, for example).
+           Feel free to change this to any font you like (e.g., Inter, Lato, etc.).
+    -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+        :root {
+            /* 2. Define some custom CSS variables for easy color/font changes later. */
+            --primary-color: #007bff;
+            --primary-hover-color: #0056b3;
+            --text-color: #333;
+            --background-color: #f4f4f4;
+            --card-background: #fff;
+            --border-color: #ddd;
+            --highlight-color: #f9f9f9;
+
+            --font-family-base: 'Roboto', sans-serif;
+
+            /* Spacing scale */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+        }
+
+        /* 3. Global resets & base styles */
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-        .container {
-            width: 80%;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+        body {
+            font-family: var(--font-family-base);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
         }
-        h1, h2 {
-            color: #333;
-        }
+
         a {
-            color: #007bff;
+            color: var(--primary-color);
             text-decoration: none;
+            transition: color 0.2s ease;
         }
         a:hover {
-            text-decoration: underline;
+            color: var(--primary-hover-color);
         }
+
+        /* 4. Container styling for a centered layout */
+        .container {
+            width: 90%;
+            max-width: 960px;
+            margin: var(--spacing-lg) auto;
+            padding: var(--spacing-md);
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* 5. Typography */
+        h1, h2 {
+            margin-bottom: var(--spacing-md);
+            color: var(--text-color);
+        }
+
+        p {
+            margin-bottom: var(--spacing-md);
+        }
+
+        /* 6. Header / Navigation */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+        .header a {
+            font-weight: 500;
+        }
+
+        /* 7. Medication list styles */
         .medication-list {
             list-style-type: none;
+            margin: 0;
             padding: 0;
         }
-        .medication-list li {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
+        .medication-item {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
         }
-        .medication-list li:last-child {
+        .medication-item:last-child {
             border-bottom: none;
         }
-        .medication-list strong {
-            display: block;
-            font-size: 1.2em;
-            margin-bottom: 5px;
+        .medication-item strong {
+            font-weight: 500;
+            margin-bottom: var(--spacing-xs);
         }
-        .medication-list em {
+        .medication-details {
             color: #666;
+            font-size: 0.95rem;
+            line-height: 1.4;
         }
+
+        /* 8. No medications placeholder */
         .no-medications {
             text-align: center;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
+            padding: var(--spacing-lg);
+            background-color: var(--highlight-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        /* 9. Buttons */
+        .button {
+            display: inline-block;
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin: var(--spacing-sm) 0;
+            background-color: var(--primary-color);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        .button:hover {
+            background-color: var(--primary-hover-color);
+        }
+        /* Optional: Add a subtle hover scale effect */
+        .button:hover {
+            transform: translateY(-1px);
+        }
+
+        /* 10. Responsive design for mobile screens */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header a {
+                margin-top: var(--spacing-sm);
+            }
+            .medication-item {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome, {{ request.auth_user.display_name }}!</h1>
 
-        <p>
+        <!-- Header or top section -->
+        <div class="header">
+            <h1>Welcome, {{ request.auth_user.display_name }}!</h1>
             <a href="{% url 'logout' %}">Log Out</a>
-        </p>
+        </div>
+
+        <hr style="margin-bottom: var(--spacing-md);">
 
         <h2>Your Scanned Medications</h2>
 
         {% if medications %}
             <ul class="medication-list">
                 {% for medication in medications %}
-                    <li>
+                    <li class="medication-item">
                         <strong>{{ medication.medication_name|default:"Medication" }}</strong>
-                        <em>Scanned on:</em> {{ medication.scan_date }}<br>
-                        <em>Active ingredients:</em> {{ medication.active_ingredients|default:"N/A" }}<br>
-                        <em>Dosage:</em> {{ medication.dosage|default:"N/A" }}<br>
-                        <em>Prescription Details:</em> {{ medication.prescription_details|default:"N/A" }}
+                        <div class="medication-details">
+                            <em>Scanned on:</em> {{ medication.scan_date }}<br>
+                            <em>Active ingredients:</em> {{ medication.active_ingredients|default:"N/A" }}<br>
+                            <em>Dosage:</em> {{ medication.dosage|default:"N/A" }}<br>
+                            <em>Prescription Details:</em> {{ medication.prescription_details|default:"N/A" }}
+                        </div>
                     </li>
                 {% endfor %}
             </ul>
@@ -80,6 +191,9 @@
                 <p>You have no scanned medications yet. <a href="{% url 'upload' %}">Scan one now!</a></p>
             </div>
         {% endif %}
+
+        <a href="{% url 'upload' %}" class="button">Scan More Medications</a>
+        <a href="{% url 'update_profile' %}" class="button">Update Profile</a>
     </div>
 </body>
 </html>

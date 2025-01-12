@@ -1,46 +1,102 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Main Page</title>
+    <!-- 1. Include a Google Font -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+        /* 2. CSS variables for consistent theming */
+        :root {
+            --primary-color: #007bff;
+            --primary-hover-color: #0056b3;
+            --text-color: #333;
+            --background-color: #f4f4f4;
+            --card-background: #fff;
+            --border-color: #ddd;
+
+            --font-family-base: 'Roboto', sans-serif;
+
+            /* Spacing scale */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+        }
+
+        /* 3. Global styles/resets */
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
-        .container {
-            width: 80%;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
+
+        body {
+            font-family: var(--font-family-base);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
         }
-        h1 {
-            color: #333;
-        }
-        p {
-            color: #666;
-        }
+
         a {
-            color: #007bff;
+            color: var(--primary-color);
             text-decoration: none;
-            display: inline-block;
-            margin: 10px 0;
+            transition: color 0.2s ease;
         }
         a:hover {
-            text-decoration: underline;
+            color: var(--primary-hover-color);
+        }
+
+        /* 4. Container for main content */
+        .container {
+            max-width: 600px;
+            margin: var(--spacing-lg) auto;
+            padding: var(--spacing-md);
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: var(--spacing-md);
+        }
+        p {
+            margin-bottom: var(--spacing-md);
+            color: #666;
+        }
+
+        /* 5. Button-like links */
+        .nav-link {
+            display: inline-block;
+            margin: var(--spacing-xs) var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--primary-color);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .nav-link:hover {
+            background-color: var(--primary-hover-color);
+            transform: translateY(-1px);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to MedsRecognition</h1>
-        <p>This is the main page of the MedsRecognition application.</p>
-        <p><a href="{% url 'dashboard' %}">Go to Dashboard</a></p>
-        <p><a href="{% url 'login' %}">Log In</a></p>
-        <p><a href="{% url 'logout' %}">Log Out</a></p>
-    </div>
+
+<div class="container">
+    <h1>Welcome to MedsRecognition</h1>
+    <p>This is the main page of the MedsRecognition application.</p>
+
+    <p><a class="nav-link" href="{% url 'dashboard' %}">Go to Dashboard</a></p>
+    <p><a class="nav-link" href="{% url 'login' %}">Log In</a></p>
+    <p><a class="nav-link" href="{% url 'logout' %}">Log Out</a></p>
+</div>
+
 </body>
 </html>
