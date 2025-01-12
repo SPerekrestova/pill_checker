@@ -16,9 +16,9 @@ class TradeMarkFetcher:
             response.raise_for_status()
             data = response.json()
             return [
-                item['openfda']['brand_name'][0]
-                for item in data.get('results', [])
-                if 'openfda' in item and 'brand_name' in item['openfda']
+                item["openfda"]["brand_name"][0]
+                for item in data.get("results", [])
+                if "openfda" in item and "brand_name" in item["openfda"]
             ]
         except Exception as e:
             print(f"Error fetching data for '{active_ingredient}' from openFDA: {e}")
@@ -30,10 +30,14 @@ class TradeMarkFetcher:
             for active_ingredient in active_ingredients:
                 # Skip fetching if trademarks are already loaded
                 if active_ingredient in self.trade_marks:
-                    print(f"Trademarks for '{active_ingredient}' already loaded. Skipping fetch.")
+                    print(
+                        f"Trademarks for '{active_ingredient}' already loaded. Skipping fetch."
+                    )
                     continue
 
-                print(f"Fetching trade marks for active ingredient: {active_ingredient}")
+                print(
+                    f"Fetching trade marks for active ingredient: {active_ingredient}"
+                )
                 trade_marks = self.fetch_trade_marks_from_openfda(active_ingredient)
                 print(f"Trade marks fetched for '{active_ingredient}': {trade_marks}")
 
@@ -41,8 +45,8 @@ class TradeMarkFetcher:
                 self.trade_marks[active_ingredient] = list(set(trade_marks))
 
             # Save results to a JSON file
-            filename = 'trade_marks_all.json'
-            with open(filename, 'w') as file:
+            filename = "trade_marks_all.json"
+            with open(filename, "w") as file:
                 json.dump(self.trade_marks, file, indent=4)
 
             print(f"Combined trade marks saved to {filename}")
@@ -51,9 +55,9 @@ class TradeMarkFetcher:
 
     def load_trade_marks_from_file(self):
         """Load trade marks from a JSON file if it exists."""
-        filename = 'trade_marks_all.json'
+        filename = "trade_marks_all.json"
         if os.path.exists(filename):
-            with open(filename, 'r') as file:
+            with open(filename, "r") as file:
                 self.trade_marks = json.load(file)
             print(f"Trade marks loaded from {filename}")
         else:
@@ -76,7 +80,7 @@ class TradeMarkFetcher:
         for ingredient in active_ingredients:
             if ingredient in self.trade_marks:
                 for trade_mark in self.trade_marks[ingredient]:
-                    if re.search(rf'\b{re.escape(trade_mark)}\b', text, re.IGNORECASE):
+                    if re.search(rf"\b{re.escape(trade_mark)}\b", text, re.IGNORECASE):
                         return trade_mark  # Return the first trade mark found
         return None  # No trade marks found
 
@@ -96,7 +100,9 @@ class TradeMarkFetcher:
 
         # Fetch trade marks for any missing active ingredients
         missing_ingredients = [
-            ingredient for ingredient in active_ingredients if ingredient not in self.trade_marks
+            ingredient
+            for ingredient in active_ingredients
+            if ingredient not in self.trade_marks
         ]
         if missing_ingredients:
             self.fetch_trade_marks(missing_ingredients)

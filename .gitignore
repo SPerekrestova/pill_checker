@@ -1,5 +1,4 @@
 .venv
-new_env
 .idea
 MedsRecognition/.env
 *.json

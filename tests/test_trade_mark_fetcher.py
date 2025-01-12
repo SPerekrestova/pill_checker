@@ -11,7 +11,7 @@ class TestTradeMarkFetcher(unittest.TestCase):
         mock_response_data = {
             "results": [
                 {"openfda": {"brand_name": ["BrandA"]}},
-                {"openfda": {"brand_name": ["BrandB"]}}
+                {"openfda": {"brand_name": ["BrandB"]}},
             ]
         }
         mock_get.return_value.status_code = 200
@@ -58,7 +58,7 @@ class TestTradeMarkFetcher(unittest.TestCase):
         fetcher = TradeMarkFetcher()
         fetcher.fetch_trade_marks_from_openfda = patch(
             "MedsRecognition.trade_mark_fetcher.TradeMarkFetcher.fetch_trade_marks_from_openfda",
-            return_value=["BrandA", "BrandB"]
+            return_value=["BrandA", "BrandB"],
         ).start()
 
         fetcher.fetch_trade_marks(["ingredient1", "ingredient2"])
@@ -66,27 +66,42 @@ class TestTradeMarkFetcher(unittest.TestCase):
         self.assertIn("ingredient2", fetcher.trade_marks)
 
         mock_file.assert_called_once_with("trade_marks_all.json", "w")
-        mock_json_dump.assert_called_once_with(fetcher.trade_marks, mock_file(), indent=4)
+        mock_json_dump.assert_called_once_with(
+            fetcher.trade_marks, mock_file(), indent=4
+        )
 
     def test_find_trade_marks(self):
         fetcher = TradeMarkFetcher()
         fetcher.trade_marks = {
             "ingredient1": ["BrandA", "BrandB"],
-            "ingredient2": ["BrandC"]
+            "ingredient2": ["BrandC"],
         }
 
-        self.assertEqual(fetcher.find_trade_marks("BrandA is a medication.", ["ingredient1"]), "BrandA")
-        self.assertEqual(fetcher.find_trade_marks("Use BrandC for treatment.", ["ingredient2"]), "BrandC")
+        self.assertEqual(
+            fetcher.find_trade_marks("BrandA is a medication.", ["ingredient1"]),
+            "BrandA",
+        )
+        self.assertEqual(
+            fetcher.find_trade_marks("Use BrandC for treatment.", ["ingredient2"]),
+            "BrandC",
+        )
 
-        self.assertIsNone(fetcher.find_trade_marks("No brand mentioned here.", ["ingredient1"]))
+        self.assertIsNone(
+            fetcher.find_trade_marks("No brand mentioned here.", ["ingredient1"])
+        )
         self.assertIsNone(fetcher.find_trade_marks("Different text.", ["ingredient2"]))
 
         fetcher.trade_marks = {}
         with self.assertRaises(ValueError):
             fetcher.find_trade_marks("Any text.", ["ingredient1"])
 
-    @patch("MedsRecognition.trade_mark_fetcher.TradeMarkFetcher.fetch_trade_marks_from_openfda", return_value=["BrandA"])
-    @patch("MedsRecognition.trade_mark_fetcher.TradeMarkFetcher.load_trade_marks_from_file")
+    @patch(
+        "MedsRecognition.trade_mark_fetcher.TradeMarkFetcher.fetch_trade_marks_from_openfda",
+        return_value=["BrandA"],
+    )
+    @patch(
+        "MedsRecognition.trade_mark_fetcher.TradeMarkFetcher.load_trade_marks_from_file"
+    )
     def test_get_trade_mark(self, mock_load_file, mock_fetch_trade_marks_from_openfda):
         fetcher = TradeMarkFetcher()
         fetcher.trade_marks = {"ingredient1": ["BrandA"]}
