@@ -1,13 +1,14 @@
 from django.urls import path
 
-from MedsRecognition import views
+from MedsRecognition import medication_views
+from MedsRecognition import auth_views
 
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('upload/', views.upload_image, name='upload'),
-    path('dashboard/', views.user_dashboard, name='dashboard'),
-    path('signup/', views.supabase_signup_view, name='signup'),
-    path('login/', views.supabase_login_view, name='login'),
-    path('logout/', views.supabase_logout_view, name='logout'),
-    path('update_profile/', views.update_profile, name='update_profile'),
+    path('', medication_views.index, name='index'),
+    path('signup/', auth_views.supabase_signup_view, name='signup'),
+    path('login/', auth_views.supabase_login_view, name='login'),
+    path('logout/', auth_views.supabase_logout_view, name='logout'),
+    path('upload/', medication_views.upload_image, name='upload'),
+    path('dashboard/', medication_views.user_dashboard, name='dashboard'),
+    path('update_profile/', auth_views.update_profile, name='update_profile'),
 ]
