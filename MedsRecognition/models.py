@@ -43,8 +43,10 @@ class ScannedMedication(models.Model):
         on_delete=models.CASCADE,
         related_name='scanned_medications'
     )
-    medication_name = models.CharField(max_length=255)
+    medication_name = models.CharField(max_length=255, blank=True, null=True)
     scan_date = models.DateTimeField(auto_now_add=True)
+    active_ingredients = models.JSONField(blank=True, null=True)
+    scanned_text = models.TextField(blank=True, null=True)
     dosage = models.CharField(max_length=255, blank=True, null=True)
     prescription_details = models.JSONField(blank=True, null=True)
 
