@@ -1,8 +1,8 @@
-django~=4.2.16
-easyocr~=1.7.2
-pillow~=11.0.0
-requests~=2.32.3
-supabase~=2.10.0
-djangorestframework~=3.15.2
-python-decouple~=3.8
-gotrue~=2.11.0
+Django==4.2.16
+djangorestframework==3.15.2
+easyocr==1.7.2
+Pillow==11.1.0
+python-decouple==3.8
+Requests==2.32.3
+supabase==2.11.0
+psycopg2==2.9.10
