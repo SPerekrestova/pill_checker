@@ -5,9 +5,10 @@ from PIL import Image
 from django.db.models import F
 from django.shortcuts import render
 
+from MedsRecognition.trade_mark_fetcher import TradeMarkFetcher
 from MedsRecognition.decorators import supabase_login_required
 from MedsRecognition.forms import ImageUploadForm
-from MedsRecognition.meds_recognition import MedsRecognition
+from MedsRecognition.active_ingredients_fetcher import ActiveIngredientsFetcher
 from MedsRecognition.models import ScannedMedication
 
 
@@ -35,16 +36,19 @@ def upload_image(request):
                 image = image.convert('RGB')
             extracted_text = extract_text_with_easyocr(image)
             active_ingredients = recognise(extracted_text)
+            trade_mark = TradeMarkFetcher().get_trade_mark(extracted_text, active_ingredients)
 
             ScannedMedication.objects.create(
                 profile=request.auth_user,
                 active_ingredients=", ".join(active_ingredients),
                 scanned_text=extracted_text,
+                medication_name=trade_mark
             )
 
             return render(request, 'recognition/result.html', {
                 'text': extracted_text,
-                'active_ingredients': active_ingredients
+                'active_ingredients': active_ingredients,
+                'trade_marks': trade_mark
             })
     else:
         form = ImageUploadForm()
@@ -58,7 +62,7 @@ def user_dashboard(request):
 
 
 def recognise(extracted_text):
-    active_ingredients = MedsRecognition().find_active_ingredients(extracted_text)
+    active_ingredients = ActiveIngredientsFetcher().find_active_ingredients(extracted_text)
     return list(dict.fromkeys(active_ingredients))
 
 
