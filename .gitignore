@@ -1,5 +1,6 @@
 .venv
+new_env
 .idea
 MedsRecognition/.env
-active_ingredients.json
-tests/active_ingredients.json
+*.json
+tests/*.json

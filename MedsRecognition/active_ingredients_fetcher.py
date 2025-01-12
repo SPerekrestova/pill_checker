@@ -3,10 +3,10 @@ import requests
 import json
 import os
 
-class MedsRecognition:
+class ActiveIngredientsFetcher:
 
     def __init__(self):
-        self.active_ingredients = MedsRecognition.fetch_active_ingredients()
+        self.active_ingredients = ActiveIngredientsFetcher.fetch_active_ingredients()
 
     @staticmethod
     def fetch_active_ingredients():
@@ -15,12 +15,12 @@ class MedsRecognition:
                 try:
                     data = json.load(file) or {}
                 except (json.JSONDecodeError, ValueError):
-                    return MedsRecognition.fetch_active_ingredients_from_api()
+                    return ActiveIngredientsFetcher.fetch_active_ingredients_from_api()
                 if data:
                     return data
 
         # If file doesn't exist or JSON is empty/invalid, fetch from API
-        return MedsRecognition.fetch_active_ingredients_from_api()
+        return ActiveIngredientsFetcher.fetch_active_ingredients_from_api()
 
     @staticmethod
     def fetch_active_ingredients_from_api():
@@ -43,7 +43,7 @@ class MedsRecognition:
 
     def find_active_ingredients(self, text):
         if not self.active_ingredients:
-            raise ValueError("Active ingredients list is not loaded.")
+            raise ValueError("ActiveIngredientsFetcher ingredients list is not loaded.")
         active_ingredients = [
             ingredient
             for ingredient in self.active_ingredients
