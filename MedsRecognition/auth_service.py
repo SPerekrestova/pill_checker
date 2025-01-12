@@ -1,5 +1,6 @@
 from MedsRecognition.supabase_client import get_supabase_client
 
+
 def sign_up_user(email: str, password: str):
     supabase = get_supabase_client()
     # This will create a new user in your Supabase authentication
@@ -10,6 +11,7 @@ def sign_up_user(email: str, password: str):
         }
     )
     return response
+
 
 def sign_in_user(email: str, password: str):
     supabase = get_supabase_client()
