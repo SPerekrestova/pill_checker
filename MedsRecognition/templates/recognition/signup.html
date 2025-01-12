@@ -2,27 +2,83 @@
 <html>
 <head>
     <title>Sign Up</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 50%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 5px;
+            color: #666;
+        }
+        input {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        p {
+            color: #666;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .messages {
+            margin-bottom: 15px;
+            color: red;
+        }
+    </style>
 </head>
 <body>
-    <h2>Sign Up</h2>
-    <form method="POST">
-        {% csrf_token %}
-        <p>
+    <div class="container">
+        <h2>Sign Up</h2>
+        <form method="POST">
+            {% csrf_token %}
             <label for="id_email">Email:</label>
             <input type="email" name="email" id="id_email" required>
-        </p>
-        <p>
-            <label for="id_username">Username (optional):</label>
-            <input type="text" name="username" id="id_username">
-        </p>
-        <p>
             <label for="id_password">Password:</label>
             <input type="password" name="password" id="id_password" required>
-        </p>
-        <button type="submit">Sign Up</button>
-    </form>
-    {% for message in messages %}
-      <p>{{ message }}</p>
-    {% endfor %}
+            <label for="id_username">Username:</label>
+            <input type="text" name="username" id="id_username">
+            <button type="submit">Sign Up</button>
+        </form>
+        <p>Already have an account? <a href="{% url 'login' %}">Log In</a></p>
+        <div class="messages">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    </div>
 </body>
 </html>
