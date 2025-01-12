@@ -2,12 +2,45 @@
 <html>
 <head>
     <title>Main Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to MedsRecognition</h1>
-    <p>This is the main page of the MedsRecognition application.</p>
-    <p><a href="{% url 'dashboard' %}">Go to Dashboard</a></p>
-    <p><a href="{% url 'login' %}">Log In</a></p>
-    <p><a href="{% url 'logout' %}">Log Out</a></p>
+    <div class="container">
+        <h1>Welcome to MedsRecognition</h1>
+        <p>This is the main page of the MedsRecognition application.</p>
+        <p><a href="{% url 'dashboard' %}">Go to Dashboard</a></p>
+        <p><a href="{% url 'login' %}">Log In</a></p>
+        <p><a href="{% url 'logout' %}">Log Out</a></p>
+    </div>
 </body>
 </html>

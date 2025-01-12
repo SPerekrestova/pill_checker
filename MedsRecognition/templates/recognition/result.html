@@ -3,19 +3,50 @@
 <html>
 <head>
     <title>Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 50%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+        }
+        p {
+            color: #666;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h2>Extracted Text</h2>
-    <p>{{ text }}</p>
-    <h2>Active Ingredients Found</h2>
-{% if active_ingredients %}
-    <p><strong>Active Ingredients:</strong> {{ active_ingredients|join:", " }}</p>
-    <a href="{% url 'dashboard' %}">View Your Scanned Medications</a>
-{% else %}
-    <p>No active ingredients found.</p>
-{% endif %}
-    <a href="{% url 'upload' %}">Upload Another Image</a>
-
-    <a href="{% url 'dashboard' %}">View Dashboard</a>
+    <div class="container">
+        <h2>Extracted Text</h2>
+        <p>{{ text }}</p>
+        <h2>Active Ingredients Found</h2>
+        {% if active_ingredients %}
+            <p><strong>Active Ingredients:</strong> {{ active_ingredients|join:", " }}</p>
+        {% else %}
+            <p>No active ingredients found.</p>
+        {% endif %}
+        <a href="{% url 'upload' %}">Upload Another Image</a>
+        <a href="{% url 'dashboard' %}">View Dashboard</a>
+    </div>
 </body>
 </html>

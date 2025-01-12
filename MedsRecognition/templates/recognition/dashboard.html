@@ -2,30 +2,84 @@
 <html>
 <head>
     <title>User Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .medication-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .medication-list li {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .medication-list li:last-child {
+            border-bottom: none;
+        }
+        .medication-list strong {
+            display: block;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+        .medication-list em {
+            color: #666;
+        }
+        .no-medications {
+            text-align: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome, {{ request.auth_user.display_name }}!</h1>
+    <div class="container">
+        <h1>Welcome, {{ request.auth_user.display_name }}!</h1>
 
-    <p>
-        <a href="{% url 'logout' %}">Log Out</a>
-    </p>
+        <p>
+            <a href="{% url 'logout' %}">Log Out</a>
+        </p>
 
-    <h2>Your Scanned Medications</h2>
+        <h2>Your Scanned Medications</h2>
 
-    {% if medications %}
-        <ul>
-            {% for medication in medications %}
-                <li>
-                    <strong>{{ medication.medication_name }}</strong><br>
-                    <em>Scanned on:</em> {{ medication.scan_date }}<br>
-                    <em>Dosage:</em> {{ medication.dosage|default:"N/A" }}<br>
-                    <em>Prescription Details:</em> {{ medication.prescription_details|default:"N/A" }}
-                </li>
-                <hr>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>You have no scanned medications yet. <a href="{% url 'upload' %}">Scan one now!</a></p>
-    {% endif %}
+        {% if medications %}
+            <ul class="medication-list">
+                {% for medication in medications %}
+                    <li>
+                        <strong>{{ medication.medication_name|default:"Medication" }}</strong>
+                        <em>Scanned on:</em> {{ medication.scan_date }}<br>
+                        <em>Active ingredients:</em> {{ medication.active_ingredients|default:"N/A" }}<br>
+                        <em>Dosage:</em> {{ medication.dosage|default:"N/A" }}<br>
+                        <em>Prescription Details:</em> {{ medication.prescription_details|default:"N/A" }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="no-medications">
+                <p>You have no scanned medications yet. <a href="{% url 'upload' %}">Scan one now!</a></p>
+            </div>
+        {% endif %}
+    </div>
 </body>
 </html>
