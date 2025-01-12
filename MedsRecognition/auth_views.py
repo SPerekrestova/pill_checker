@@ -1,14 +1,15 @@
-import io
+import logging
 
-from PIL import Image
 from django.contrib import messages
-from django.shortcuts import render, redirect
 from django.contrib.auth import logout
+from django.shortcuts import render, redirect
 
 from MedsRecognition.auth_service import sign_up_user, sign_in_user
 from MedsRecognition.decorators import supabase_login_required
 from MedsRecognition.forms import ProfileUpdateForm
 from MedsRecognition.models import Profile
+
+logger = logging.getLogger(__name__)
 
 
 def supabase_signup_view(request):
@@ -49,19 +50,25 @@ def supabase_login_view(request):
                 return redirect('dashboard')
             else:
                 messages.error(request, "Invalid credentials or login failed.")
+        except Profile.DoesNotExist:
+            messages.error(request, "Profile does not exist.")
+            logger.error("Profile does not exist for user: %s", email)
         except Exception as e:
             messages.error(request, f"Supabase login error: {e}")
+            logger.exception("Supabase login error for user: %s", email)
     return render(request, 'recognition/login.html')
 
 
 def supabase_logout_view(request):
-    logout(request)
+    if request.method == 'POST':
+        logout(request)
+        return redirect('login')  # Redirect to the login page after logging out
     return render(request, 'recognition/logout.html')
 
 
 @supabase_login_required
 def update_profile(request):
-    profile = Profile.objects.get(user_id=request.user.id)
+    profile = request.auth_user
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, instance=profile)
         if form.is_valid():

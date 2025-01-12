@@ -1,79 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Sign Up</title>
+    <!-- 1. Google Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    >
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+        :root {
+            --primary-color: #007bff;
+            --primary-hover-color: #0056b3;
+            --text-color: #333;
+            --background-color: #f4f4f4;
+            --card-background: #fff;
+            --border-color: #ddd;
+            --font-family-base: 'Roboto', sans-serif;
+
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+        }
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
+        body {
+            font-family: var(--font-family-base);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
         .container {
-            width: 50%;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            margin: var(--spacing-lg) auto;
+            padding: var(--spacing-lg);
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+
         h2 {
-            color: #333;
+            margin-bottom: var(--spacing-md);
+            text-align: center;
         }
         form {
             display: flex;
             flex-direction: column;
         }
         label {
-            margin-bottom: 5px;
+            margin-bottom: var(--spacing-xs);
             color: #666;
+            font-size: 0.95rem;
         }
         input {
-            margin-bottom: 15px;
-            padding: 10px;
-            border: 1px solid #ddd;
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border-color);
             border-radius: 4px;
+            font-size: 1rem;
         }
-        button {
-            padding: 10px;
-            background-color: #007bff;
+        .button {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--primary-color);
             color: #fff;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease, transform 0.2s ease;
         }
-        button:hover {
-            background-color: #0056b3;
+        .button:hover {
+            background-color: var(--primary-hover-color);
+            transform: translateY(-1px);
         }
         p {
+            margin: var(--spacing-md) 0;
+            text-align: center;
             color: #666;
         }
         a {
-            color: #007bff;
+            color: var(--primary-color);
             text-decoration: none;
         }
         a:hover {
             text-decoration: underline;
         }
         .messages {
-            margin-bottom: 15px;
+            margin: var(--spacing-md) 0;
             color: red;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Sign Up</h2>
+        <h2>Create an Account</h2>
         <form method="POST">
             {% csrf_token %}
             <label for="id_email">Email:</label>
             <input type="email" name="email" id="id_email" required>
-            <label for="id_password">Password:</label>
-            <input type="password" name="password" id="id_password" required>
-            <label for="id_username">Username:</label>
-            <input type="text" name="username" id="id_username">
-            <button type="submit">Sign Up</button>
+
+            <label for="id_password1">Password:</label>
+            <input type="password" name="password1" id="id_password1" required>
+
+            <label for="id_password2">Confirm Password:</label>
+            <input type="password" name="password2" id="id_password2" required>
+
+            <button class="button" type="submit">Sign Up</button>
         </form>
-        <p>Already have an account? <a href="{% url 'login' %}">Log In</a></p>
+
+        <p>Already have an account? <a href="{% url 'login' %}">Log in</a></p>
+
         <div class="messages">
             {% for message in messages %}
                 <p>{{ message }}</p>
