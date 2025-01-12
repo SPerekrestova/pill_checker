@@ -3,6 +3,7 @@ import requests
 import json
 import os
 
+
 class ActiveIngredientsFetcher:
 
     def __init__(self):
@@ -10,8 +11,8 @@ class ActiveIngredientsFetcher:
 
     @staticmethod
     def fetch_active_ingredients():
-        if os.path.exists('active_ingredients.json'):
-            with open('active_ingredients.json', 'r') as file:
+        if os.path.exists("active_ingredients.json"):
+            with open("active_ingredients.json", "r") as file:
                 try:
                     data = json.load(file) or {}
                 except (json.JSONDecodeError, ValueError):
@@ -30,16 +31,15 @@ class ActiveIngredientsFetcher:
             response.raise_for_status()
             data = response.json()
             ingredients = [
-                item['minConcept']['name']
-                for item in data.get('drugMemberGroup', {}).get('drugMember', [])
-                if 'minConcept' in item and 'name' in item['minConcept']
+                item["minConcept"]["name"]
+                for item in data.get("drugMemberGroup", {}).get("drugMember", [])
+                if "minConcept" in item and "name" in item["minConcept"]
             ]
-            with open('active_ingredients.json', 'w') as file:
+            with open("active_ingredients.json", "w") as file:
                 json.dump(ingredients, file, indent=4)
             return ingredients
         except Exception as e:
             raise ValueError(f"Error while fetching active ingredients from API: {e}")
-
 
     def find_active_ingredients(self, text):
         if not self.active_ingredients:
@@ -47,10 +47,10 @@ class ActiveIngredientsFetcher:
         active_ingredients = [
             ingredient
             for ingredient in self.active_ingredients
-            if self._is_valid_ingredient(ingredient) and re.search(rf'\b{re.escape(ingredient)}\b', text, re.IGNORECASE)
+            if self._is_valid_ingredient(ingredient)
+            and re.search(rf"\b{re.escape(ingredient)}\b", text, re.IGNORECASE)
         ]
         return active_ingredients
-
 
     @staticmethod
     def _is_valid_ingredient(ingredient):
