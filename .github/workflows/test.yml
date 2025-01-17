@@ -22,4 +22,5 @@ jobs:
 
     - name: Run tests
       run: |
+        export DJANGO_SETTINGS_MODULE=MedsRecognition.settings
         python -m unittest discover -s tests
