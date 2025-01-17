@@ -5,7 +5,6 @@ from MedsRecognition.active_ingredients_fetcher import ActiveIngredientsFetcher
 
 
 class TestActiveIngredientsFetcher(unittest.TestCase):
-
     @patch("requests.get")
     def test_fetch_active_ingredients_from_api_success(self, mock_get):
         mock_response_data = {
@@ -35,7 +34,11 @@ class TestActiveIngredientsFetcher(unittest.TestCase):
             "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=0&relaSource=ATC"
         )
 
-    @patch("builtins.open", new_callable=mock_open, read_data=json.dumps(["IngredientA", "IngredientB"]))
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data=json.dumps(["IngredientA", "IngredientB"]),
+    )
     @patch("os.path.exists")
     def test_fetch_active_ingredients_from_file_exists(self, mock_exists, mock_file):
         mock_exists.return_value = True
@@ -47,7 +50,11 @@ class TestActiveIngredientsFetcher(unittest.TestCase):
     def test_fetch_active_ingredients_from_file_not_exists(self, mock_exists):
         mock_exists.return_value = False
 
-        with patch.object(ActiveIngredientsFetcher, 'fetch_active_ingredients_from_api', return_value=["IngredientA", "IngredientB"]):
+        with patch.object(
+            ActiveIngredientsFetcher,
+            "fetch_active_ingredients_from_api",
+            return_value=["IngredientA", "IngredientB"],
+        ):
             fetcher = ActiveIngredientsFetcher()
             self.assertEqual(fetcher.active_ingredients, ["IngredientA", "IngredientB"])
 
@@ -56,21 +63,16 @@ class TestActiveIngredientsFetcher(unittest.TestCase):
         fetcher.active_ingredients = ["IngredientA", "IngredientB"]
 
         self.assertEqual(
-            fetcher.find_active_ingredients("This contains IngredientA."),
-            ["IngredientA"]
+            fetcher.find_active_ingredients("This contains IngredientA."), ["IngredientA"]
         )
         self.assertEqual(
-            fetcher.find_active_ingredients("This contains IngredientB."),
-            ["IngredientB"]
+            fetcher.find_active_ingredients("This contains IngredientB."), ["IngredientB"]
         )
         self.assertEqual(
             fetcher.find_active_ingredients("This contains both IngredientA and IngredientB."),
-            ["IngredientA", "IngredientB"]
+            ["IngredientA", "IngredientB"],
         )
-        self.assertEqual(
-            fetcher.find_active_ingredients("No ingredients here."),
-            []
-        )
+        self.assertEqual(fetcher.find_active_ingredients("No ingredients here."), [])
 
     def test_is_valid_ingredient(self):
         self.assertTrue(ActiveIngredientsFetcher._is_valid_ingredient("IngredientA"))

@@ -30,14 +30,10 @@ class TradeMarkFetcher:
             for active_ingredient in active_ingredients:
                 # Skip fetching if trademarks are already loaded
                 if active_ingredient in self.trade_marks:
-                    print(
-                        f"Trademarks for '{active_ingredient}' already loaded. Skipping fetch."
-                    )
+                    print(f"Trademarks for '{active_ingredient}' already loaded. Skipping fetch.")
                     continue
 
-                print(
-                    f"Fetching trade marks for active ingredient: {active_ingredient}"
-                )
+                print(f"Fetching trade marks for active ingredient: {active_ingredient}")
                 trade_marks = self.fetch_trade_marks_from_openfda(active_ingredient)
                 print(f"Trade marks fetched for '{active_ingredient}': {trade_marks}")
 
@@ -100,9 +96,7 @@ class TradeMarkFetcher:
 
         # Fetch trade marks for any missing active ingredients
         missing_ingredients = [
-            ingredient
-            for ingredient in active_ingredients
-            if ingredient not in self.trade_marks
+            ingredient for ingredient in active_ingredients if ingredient not in self.trade_marks
         ]
         if missing_ingredients:
             self.fetch_trade_marks(missing_ingredients)
