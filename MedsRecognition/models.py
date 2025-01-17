@@ -12,11 +12,7 @@ class UploadedImage(models.Model):
 
     def __str__(self):
         # Use a fallback to avoid AttributeError on missing image or name
-        return (
-            self.image.name
-            if self.image and hasattr(self.image, "name")
-            else "No Image"
-        )
+        return self.image.name if self.image and hasattr(self.image, "name") else "No Image"
 
 
 class Profile(models.Model):

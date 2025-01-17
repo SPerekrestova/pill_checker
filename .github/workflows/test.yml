@@ -1,6 +1,6 @@
 name: Run Tests
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   test:
@@ -20,6 +20,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Load environment variables
+      run: |
+        echo "DJANGO_SETTINGS_MODULE=MedsRecognition.settings" >> $GITHUB_ENV
+
     - name: Run tests
       run: |
-        python -m unittest discover -s tests
+        python manage.py test
