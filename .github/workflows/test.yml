@@ -22,9 +22,11 @@ jobs:
 
     - name: Load environment variables
       run: |
-        export $(cat .env | xargs)    
+        export $(cat .env | xargs)
+
+    - name: Set Django settings
+      run: export DJANGO_SETTINGS_MODULE=MedsRecognition.settings
 
     - name: Run tests
       run: |
-        export DJANGO_SETTINGS_MODULE=MedsRecognition.settings
         python -m unittest discover -s tests
