@@ -5,7 +5,6 @@ from MedsRecognition.trade_mark_fetcher import TradeMarkFetcher
 
 
 class TestTradeMarkFetcher(unittest.TestCase):
-
     @patch("requests.get")
     def test_fetch_trade_marks_from_openfda_success(self, mock_get):
         mock_response_data = {
@@ -66,9 +65,7 @@ class TestTradeMarkFetcher(unittest.TestCase):
         self.assertIn("ingredient2", fetcher.trade_marks)
 
         mock_file.assert_called_once_with("trade_marks_all.json", "w")
-        mock_json_dump.assert_called_once_with(
-            fetcher.trade_marks, mock_file(), indent=4
-        )
+        mock_json_dump.assert_called_once_with(fetcher.trade_marks, mock_file(), indent=4)
 
     def test_find_trade_marks(self):
         fetcher = TradeMarkFetcher()
@@ -86,9 +83,7 @@ class TestTradeMarkFetcher(unittest.TestCase):
             "BrandC",
         )
 
-        self.assertIsNone(
-            fetcher.find_trade_marks("No brand mentioned here.", ["ingredient1"])
-        )
+        self.assertIsNone(fetcher.find_trade_marks("No brand mentioned here.", ["ingredient1"]))
         self.assertIsNone(fetcher.find_trade_marks("Different text.", ["ingredient2"]))
 
         fetcher.trade_marks = {}
@@ -99,9 +94,7 @@ class TestTradeMarkFetcher(unittest.TestCase):
         "MedsRecognition.trade_mark_fetcher.TradeMarkFetcher.fetch_trade_marks_from_openfda",
         return_value=["BrandA"],
     )
-    @patch(
-        "MedsRecognition.trade_mark_fetcher.TradeMarkFetcher.load_trade_marks_from_file"
-    )
+    @patch("MedsRecognition.trade_mark_fetcher.TradeMarkFetcher.load_trade_marks_from_file")
     def test_get_trade_mark(self, mock_load_file, mock_fetch_trade_marks_from_openfda):
         fetcher = TradeMarkFetcher()
         fetcher.trade_marks = {"ingredient1": ["BrandA"]}
