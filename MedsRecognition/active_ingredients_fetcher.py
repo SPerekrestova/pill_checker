@@ -5,7 +5,6 @@ import os
 
 
 class ActiveIngredientsFetcher:
-
     def __init__(self):
         self.active_ingredients = ActiveIngredientsFetcher.fetch_active_ingredients()
 
@@ -26,7 +25,9 @@ class ActiveIngredientsFetcher:
     @staticmethod
     def fetch_active_ingredients_from_api():
         try:
-            url = "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=0&relaSource=ATC"
+            url = (
+                "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=0&relaSource=ATC"
+            )
             response = requests.get(url)
             response.raise_for_status()
             data = response.json()
