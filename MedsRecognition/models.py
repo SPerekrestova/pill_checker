@@ -42,9 +42,9 @@ class Medication(models.Model):
     profile = models.ForeignKey(
         Profile,  # references the Profile class
         on_delete=models.CASCADE,
-        related_name="scanned_medications",
+        related_name="medications",
     )
-    medication_name = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
     scan_date = models.DateTimeField(auto_now_add=True)
     active_ingredients = models.JSONField(blank=True, null=True)
     scanned_text = models.TextField(blank=True, null=True)
@@ -52,10 +52,10 @@ class Medication(models.Model):
     prescription_details = models.JSONField(blank=True, null=True)
 
     class Meta:
-        db_table = "scanned_medication"
+        db_table = "medication"
         managed = True
 
     def __str__(self):
         # Use getattr to safely access the user's username
         username = getattr(self.profile, "username", "Unknown User")
-        return f"{self.medication_name} - {username}"
+        return f"{self.title} - {username}"

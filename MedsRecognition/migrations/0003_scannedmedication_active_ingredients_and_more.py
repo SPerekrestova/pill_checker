@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name="scannedmedication",
-            name="medication_name",
+            name="title",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]
