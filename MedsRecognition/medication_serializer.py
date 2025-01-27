@@ -6,4 +6,4 @@ from MedsRecognition.models import Medication
 class MedicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Medication
-        fields = ["id", "medication_name", "active_ingredients", "profile"]
+        fields = ["id", "title", "active_ingredients", "profile"]
