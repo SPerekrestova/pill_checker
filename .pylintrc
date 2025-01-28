@@ -35,7 +35,7 @@ enable=all
 # option multiple times (only on the command line, not in the configuration
 # file where it should appear only once). See also the "--enable" option for
 # examples.
-disable=C0301,C0114,C0115,C0116,R0903,E0401,W0718,W3101,E0307,C0411,R1705,W1514,W0707,E501,
+disable=C0301,C0114,C0115,C0116,R0903,E0401,W0718,W3101,E0307,C0411,R1705,W1514,W0707,E501,W0125
 
 [REPORTS]
 # Set the output format. Available formats are text, parseable, colorized,
