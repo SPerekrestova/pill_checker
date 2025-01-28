@@ -1,5 +1,5 @@
 from PIL import Image
-from MedsRecognition.medication_views import extract_text_with_easyocr
+from MedsRecognition.ocr_service import extract_text_with_easyocr
 import django
 import os
 import unittest
@@ -11,7 +11,7 @@ django.setup()
 
 
 class TestExtractTextWithEasyOCR(unittest.TestCase):
-    @patch("MedsRecognition.medication_views.easyocr.Reader")
+    @patch("MedsRecognition.ocr_service.easyocr.Reader")
     def test_extract_text_with_easyocr_success(self, mock_reader_class):
         image_mock = MagicMock(spec=Image.Image)
         image_mock.mode = "RGB"
@@ -27,7 +27,7 @@ class TestExtractTextWithEasyOCR(unittest.TestCase):
         mock_reader_class.assert_called_once_with(["en"], gpu=True)
         mock_reader_instance.readtext.assert_called_once()
 
-    @patch("MedsRecognition.medication_views.easyocr.Reader")
+    @patch("MedsRecognition.ocr_service.easyocr.Reader")
     def test_extract_text_with_easyocr_no_text(self, mock_reader_class):
         image_mock = MagicMock(spec=Image.Image)
         image_mock.mode = "RGB"
@@ -43,7 +43,7 @@ class TestExtractTextWithEasyOCR(unittest.TestCase):
         mock_reader_class.assert_called_once_with(["en"], gpu=True)
         mock_reader_instance.readtext.assert_called_once()
 
-    @patch("MedsRecognition.medication_views.easyocr.Reader")
+    @patch("MedsRecognition.ocr_service.easyocr.Reader")
     def test_extract_text_with_easyocr_image_conversion(self, mock_reader_class):
         image_mock = MagicMock(spec=Image.Image)
         image_mock.mode = "RGBA"
@@ -61,7 +61,7 @@ class TestExtractTextWithEasyOCR(unittest.TestCase):
         mock_reader_class.assert_called_once_with(["en"], gpu=True)
         mock_reader_instance.readtext.assert_called_once()
 
-    @patch("MedsRecognition.medication_views.easyocr.Reader")
+    @patch("MedsRecognition.ocr_service.easyocr.Reader")
     def test_extract_text_with_easyocr_error_handling(self, mock_reader_class):
         image_mock = MagicMock(spec=Image.Image)
         image_mock.mode = "RGB"

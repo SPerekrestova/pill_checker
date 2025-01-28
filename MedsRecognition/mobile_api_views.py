@@ -1,6 +1,3 @@
-import io
-
-from PIL import Image
 from django.contrib.auth import logout
 from django.db import models
 from rest_framework import status
@@ -11,7 +8,7 @@ from rest_framework.views import APIView
 
 from MedsRecognition.auth_service import sign_in_user
 from MedsRecognition.medication_serializer import MedicationSerializer
-from MedsRecognition.medication_views import recognise, extract_text_with_easyocr
+from MedsRecognition.medication_views import recognise
 from MedsRecognition.models import Medication, Profile
 
 
@@ -100,19 +97,8 @@ class MedicationRecognizeView(APIView):
                 return Response(
                     {"error": "Image file not provided"}, status=status.HTTP_400_BAD_REQUEST
                 )
-
             try:
-                image = Image.open(io.BytesIO(image_file.read()))
-                if image.mode in ("RGBA", "P"):
-                    image = image.convert("RGB")
-                extracted_text = extract_text_with_easyocr(image)
-                active_ingredients = recognise(extracted_text)
-
-                Medication.objects.create(
-                    profile=request.auth_user,
-                    active_ingredients=", ".join(active_ingredients),
-                    scanned_text=extracted_text,
-                )
+                active_ingredients = recognise(request)
                 return Response(active_ingredients, status=status.HTTP_200_OK)
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
