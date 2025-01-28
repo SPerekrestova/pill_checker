@@ -1,6 +1,5 @@
 ignore = [
-    "E501",  # Ignore line too long
+    "E501",
 ]
-# Configure additional options if required
-line-length = 200  # Example: Adjust max line length
-exclude = ["migrations", "settings.py"]  # Ignore specific files or directories
+line-length = 100
+exclude = ["migrations", "settings.py"]
