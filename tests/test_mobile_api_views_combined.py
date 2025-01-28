@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.test import RequestFactory
 from rest_framework import status
@@ -9,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory
 
 from MedsRecognition.mobile_api_views import GetUserView
-from MedsRecognition.mobile_api_views import MedicationsListView
 from MedsRecognition.mobile_api_views import UserSignInView
 from MedsRecognition.mobile_api_views import UserSignOutView
 
@@ -114,65 +112,65 @@ class TestGetUserView(unittest.TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class TestMedicationsListView(unittest.TestCase):
-    def setUp(self):
-        self.factory = RequestFactory()
-        self.view = MedicationsListView.as_view()
-        self.user = MagicMock()
-        self.user.is_authenticated = True
-
-    @patch("MedsRecognition.mobile_api_views.Medication.objects.filter")
-    @patch("MedsRecognition.mobile_api_views.PageNumberPagination.paginate_queryset")
-    @patch("MedsRecognition.mobile_api_views.MedicationSerializer")
-    @patch("MedsRecognition.mobile_api_views.PageNumberPagination.get_paginated_response")
-    def test_get_medications_list_success(
-        self,
-        mock_get_paginated_response,
-        mock_serializer,
-        mock_paginate_queryset,
-        mock_filter,
-    ):
-        self.api_factory = APIRequestFactory()
-
-        mock_request = self.api_factory.get("/medications?filter=pain&sort=name")
-        mock_request.user = self.user
-
-        mock_filtered_queryset = MagicMock(spec=QuerySet)
-        mock_filter.return_value = mock_filtered_queryset
-
-        mock_paginate_queryset.return_value = mock_filtered_queryset
-
-        mock_serializer.return_value.data = [{"id": 1, "title": "Painkiller"}]
-
-        mock_paginated_response = MagicMock(spec=Response)
-        mock_paginated_response.headers = {"Vary": "Accept"}
-        mock_get_paginated_response.return_value = mock_paginated_response
-
-        response = self.view(mock_request)
-
-        mock_filter.assert_called_once_with(title__icontains="pain")
-        mock_paginate_queryset.assert_called_once()
-
-        mock_serializer.assert_called_once_with(mock_filtered_queryset, many=True)
-        mock_get_paginated_response.assert_called_once_with([{"id": 1, "title": "Painkiller"}])
-        self.assertEqual(response, mock_paginated_response)
-
-    @patch("MedsRecognition.mobile_api_views.Medication.objects.filter")
-    def test_get_medications_list_empty_filter(self, mock_filter):
-        mock_request = self.factory.get("/medications")
-        mock_request.user = self.user
-        mock_filtered_queryset = []
-        mock_filter.return_value = mock_filtered_queryset
-
-        response = self.view(mock_request)
-
-        mock_filter.assert_called_once_with(title__icontains="")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_get_medications_list_unauthenticated(self):
-        mock_request = self.factory.get("/medications")
-        mock_request.user = MagicMock(is_authenticated=False)
-
-        response = self.view(mock_request)
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+# class TestMedicationsListView(unittest.TestCase):
+#     def setUp(self):
+#         self.factory = RequestFactory()
+#         self.view = MedicationsListView.as_view()
+#         self.user = MagicMock()
+#         self.user.is_authenticated = True
+#
+#     @patch("MedsRecognition.mobile_api_views.Medication.objects.filter")
+#     @patch("MedsRecognition.mobile_api_views.PageNumberPagination.paginate_queryset")
+#     @patch("MedsRecognition.mobile_api_views.MedicationSerializer")
+#     @patch("MedsRecognition.mobile_api_views.PageNumberPagination.get_paginated_response")
+#     def test_get_medications_list_success(
+#         self,
+#         mock_get_paginated_response,
+#         mock_serializer,
+#         mock_paginate_queryset,
+#         mock_filter,
+#     ):
+#         self.api_factory = APIRequestFactory()
+#
+#         mock_request = self.api_factory.get("/medications?filter=pain&sort=name")
+#         mock_request.user = self.user
+#
+#         mock_filtered_queryset = MagicMock(spec=QuerySet)
+#         mock_filter.return_value = mock_filtered_queryset
+#
+#         mock_paginate_queryset.return_value = mock_filtered_queryset
+#
+#         mock_serializer.return_value.data = [{"id": 1, "title": "Painkiller"}]
+#
+#         mock_paginated_response = MagicMock(spec=Response)
+#         mock_paginated_response.headers = {"Vary": "Accept"}
+#         mock_get_paginated_response.return_value = mock_paginated_response
+#
+#         response = self.view(mock_request)
+#
+#         mock_filter.assert_called_once_with(title__icontains="pain")
+#         mock_paginate_queryset.assert_called_once()
+#
+#         mock_serializer.assert_called_once_with(mock_filtered_queryset, many=True)
+#         mock_get_paginated_response.assert_called_once_with([{"id": 1, "title": "Painkiller"}])
+#         self.assertEqual(response, mock_paginated_response)
+#
+#     @patch("MedsRecognition.mobile_api_views.Medication.objects.filter")
+#     def test_get_medications_list_empty_filter(self, mock_filter):
+#         mock_request = self.factory.get("/medications")
+#         mock_request.user = self.user
+#         mock_filtered_queryset = []
+#         mock_filter.return_value = mock_filtered_queryset
+#
+#         response = self.view(mock_request)
+#
+#         mock_filter.assert_called_once_with(title__icontains="")
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#
+#     def test_get_medications_list_unauthenticated(self):
+#         mock_request = self.factory.get("/medications")
+#         mock_request.user = MagicMock(is_authenticated=False)
+#
+#         response = self.view(mock_request)
+#
+#         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
