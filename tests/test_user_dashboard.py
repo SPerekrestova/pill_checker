@@ -13,7 +13,7 @@ django.setup()
 
 class TestUserDashboard(unittest.TestCase):
     @patch("MedsRecognition.medication_views.render")
-    @patch("MedsRecognition.medication_views.ScannedMedication.objects.filter")
+    @patch("MedsRecognition.medication_views.Medication.objects.filter")
     @patch("MedsRecognition.decorators.Profile.objects.get")
     def test_user_dashboard_authenticated_user(self, mock_profile_get, mock_filter, mock_render):
         mock_request = MagicMock(spec=HttpRequest)

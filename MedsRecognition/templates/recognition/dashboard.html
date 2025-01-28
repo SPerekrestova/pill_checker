@@ -176,7 +176,7 @@
             <ul class="medication-list">
                 {% for medication in medications %}
                     <li class="medication-item">
-                        <strong>{{ medication.medication_name|default:"Medication" }}</strong>
+                        <strong>{{ medication.title|default:"Medication" }}</strong>
                         <div class="medication-details">
                             <em>Scanned on:</em> {{ medication.scan_date }}<br>
                             <em>ActiveIngredientsFetcher ingredients:</em> {{ medication.active_ingredients|default:"N/A" }}<br>
