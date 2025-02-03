@@ -13,14 +13,14 @@ def recognise(request):
     if image.mode in ("RGBA", "P"):
         image = image.convert("RGB")
     extracted_text = extract_text_with_easyocr(image)
-    active_ingredients = recognise(extracted_text)
+    active_ingredients = MedicalNERClient().find_active_ingredients(extracted_text)
 
     Medication.objects.create(
         profile=request.auth_user,
         active_ingredients=", ".join(active_ingredients),
         scanned_text=extracted_text,
     )
-    active_ingredients = MedicalNERClient().find_active_ingredients(extracted_text)
+
     return list(dict.fromkeys(active_ingredients))
 
 

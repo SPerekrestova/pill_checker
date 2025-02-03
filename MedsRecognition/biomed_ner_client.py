@@ -1,9 +1,15 @@
+import os
+
 import requests
 
 
 class MedicalNERClient:
-    def __init__(self, api_url="http://localhost:8000"):
-        self.api_url = api_url
+    def __init__(self):
+        host = os.getenv("BIOMED_HOST")
+        if not host:
+            raise ValueError("Environment variable 'BIOMED_HOST' must be set.")
+        scheme = os.getenv("BIOMED_SCHEME", "http")
+        self.api_url = f"{scheme}://{host}"
 
     def find_active_ingredients(self, text):
         """
@@ -14,4 +20,5 @@ class MedicalNERClient:
             raise RuntimeError(
                 f"API call failed with status {response.status_code}: {response.text}"
             )
-        return response.json()
+        result = [entity["text"] for entity in response.json()["entities"]]
+        return result
