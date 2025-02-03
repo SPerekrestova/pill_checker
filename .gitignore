@@ -3,3 +3,4 @@
 MedsRecognition/.env
 *.json
 tests/*.json
+.env

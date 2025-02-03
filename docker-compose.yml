@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  model_server_app:
+    image: sperva/model_server_app:latest
+    ports:
+      - "8081:8081"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 13G
+
+  meds_recognition_app:
+    image: sperva/meds_recognition_app:latest
+    ports:
+      - "80:8000"
+    environment:
+      # The following environment variables will be set at runtime.
+      # Their values can come from the host environment or an external .env file.
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      BIOMED_HOST: ${BIOMED_HOST}
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+    restart: always
+    depends_on:
+      - model_server_app
+
+networks:
+  default:
+    driver: bridge

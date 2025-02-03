@@ -45,5 +45,18 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             cd ~/meds_recognition
+            # Write a .env file with secrets to be used by docker-compose (this file should be excluded from source control)
+            cat <<EOF > .env
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+            SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
+            DATABASE_NAME=${{ secrets.DATABASE_NAME }}
+            DATABASE_USER=${{ secrets.DATABASE_USER }}
+            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+            DATABASE_HOST=${{ secrets.DATABASE_HOST }}
+            DATABASE_PORT=${{ secrets.DATABASE_PORT }}
+            BIOMED_HOST=${{ secrets.BIOMED_HOST }}
+            DJANGO_SETTINGS_MODULE=${{ secrets.DJANGO_SETTINGS_MODULE }}
+            EOF
             docker-compose pull meds_recognition_app
             docker-compose up -d meds_recognition_app
