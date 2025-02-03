@@ -16,7 +16,8 @@ COPY requirements.txt /app/
 
 RUN pip install -r requirements.txt
 
-COPY . /app/
+COPY MedsRecognition /app/
+COPY manage.py /app/
 
 EXPOSE 8000
 
