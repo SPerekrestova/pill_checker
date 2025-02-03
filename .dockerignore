@@ -1,0 +1,37 @@
+# Bytecode and cache files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Virtual environment directories
+venv/
+.venv/
+
+# Git version control files and directories
+.git
+.gitignore
+.github/
+
+# Test directories (adjust these names as needed)
+tests/
+test/
+
+# Environment variable files
+.env
+*.env
+
+# Editor and IDE settings
+.vscode/
+.idea/
+.run/
+
+# macOS specific files
+.DS_Store
+
+# Log files
+*.log
+
+.pylintrc
+.pre-commit-config.yaml
+ruff.toml
