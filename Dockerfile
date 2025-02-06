@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 # Set non-sensitive defaults (you can override these at runtime)
-ENV BIOMED_HOST=138.68.73.241:8081 \
+ENV BIOMED_HOST=165.232.73.98:8081 \
     DJANGO_SETTINGS_MODULE=MedsRecognition.settings
 
 WORKDIR /app
