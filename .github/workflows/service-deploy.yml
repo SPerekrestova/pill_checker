@@ -58,4 +58,4 @@ jobs:
             BIOMED_HOST=${{ secrets.BIOMED_HOST }}
             DJANGO_SETTINGS_MODULE=${{ secrets.DJANGO_SETTINGS_MODULE }}
             EOF
-            docker-compose up
+            docker-compose up -d
