@@ -19,7 +19,7 @@ services:
     ports:
       - "80:8000"
     environment:
-      BIOMED_HOST: "http://model_server_app:8081"
+      BIOMED_HOST: "model_server_app:8081"
     restart: always
     depends_on:
       - model_server_app
