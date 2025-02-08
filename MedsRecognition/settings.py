@@ -5,7 +5,7 @@ from decouple import config
 
 SECRET_KEY = "your-secret-key"
 DEBUG = True
-ALLOWED_HOSTS = [config("BIOMED_HOST", default="")]
+ALLOWED_HOSTS = ["165.232.73.98"]
 
 INSTALLED_APPS = [
     "django.contrib.sessions",
