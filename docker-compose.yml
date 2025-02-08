@@ -14,19 +14,12 @@ services:
 
   meds_recognition_app:
     image: sperva/meds_recognition_app:latest
+    env_file:
+      - .env
     ports:
       - "80:8000"
     environment:
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_KEY: ${SUPABASE_KEY}
-      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
-      DATABASE_NAME: ${DATABASE_NAME}
-      DATABASE_USER: ${DATABASE_USER}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_HOST: ${DATABASE_HOST}
-      DATABASE_PORT: ${DATABASE_PORT}
       BIOMED_HOST: "http://model_server_app:8081"
-      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
     restart: always
     depends_on:
       - model_server_app
