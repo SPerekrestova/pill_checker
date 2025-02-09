@@ -1,61 +1,58 @@
-from django.db import models
+from datetime import datetime
+from sqlalchemy import Column, BigInteger, DateTime, String, Text, ForeignKey, JSON
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import declarative_base, relationship
+
+Base = declarative_base()
 
 
-class UploadedImage(models.Model):
-    image = models.ImageField(upload_to="uploads/")
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    file_path = models.TextField(blank=True, null=True)
+class UploadedImage(Base):
+    __tablename__ = "uploaded_images"
 
-    class Meta:
-        db_table = "uploaded_images"
-        managed = True
+    # If you had an auto-increment primary key in Django, define it similarly here.
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
 
-    def __str__(self):
-        # Use a fallback to avoid AttributeError on missing image or name
-        return self.image.name if self.image and hasattr(self.image, "name") else "No Image"
+    # In Django, ImageField stores references/file paths. Typically, you'd
+    # store the path in a text/string column.
+    image = Column(String(length=255), nullable=False)
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    file_path = Column(Text, nullable=True)
 
-
-class Profile(models.Model):
-    """
-    A Django-managed table in the 'public' schema
-    that references auth.users (user_id) via a manual FK.
-    """
-
-    id = models.BigAutoField(primary_key=True)
-    user_id = models.UUIDField()
-    display_name = models.TextField(blank=True, null=True)
-    bio = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "profiles"
-        managed = True
-
-    def __str__(self):
-        return self.display_name or f"Profile {self.id}"
+    def __repr__(self):
+        return f"<UploadedImage id={self.id} image='{self.image}'>"
 
 
-class Medication(models.Model):
-    id = models.BigAutoField(primary_key=True)
+class Profile(Base):
+    __tablename__ = "profiles"
 
-    profile = models.ForeignKey(
-        Profile,  # references the Profile class
-        on_delete=models.CASCADE,
-        related_name="medications",
-    )
-    title = models.CharField(max_length=255, blank=True, null=True)
-    scan_date = models.DateTimeField(auto_now_add=True)
-    active_ingredients = models.JSONField(blank=True, null=True)
-    scanned_text = models.TextField(blank=True, null=True)
-    dosage = models.CharField(max_length=255, blank=True, null=True)
-    prescription_details = models.JSONField(blank=True, null=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    user_id = Column(UUID(as_uuid=True), nullable=False, unique=True, index=True)
+    display_name = Column(Text, nullable=True)
+    bio = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    class Meta:
-        db_table = "medication"
-        managed = True
+    medications = relationship("Medication", back_populates="profile")
 
-    def __str__(self):
-        # Use getattr to safely access the user's username
-        username = getattr(self.profile, "username", "Unknown User")
-        return f"{self.title} - {username}"
+    def __repr__(self):
+        return f"<Profile id={self.id} display_name='{self.display_name}'>"
+
+
+class Medication(Base):
+    __tablename__ = "medication"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    # ForeignKey references the 'id' column of the Profile table
+    profile_id = Column(BigInteger, ForeignKey("profiles.id"), nullable=False)
+    title = Column(String(length=255), nullable=True)
+    scan_date = Column(DateTime, default=datetime.utcnow)
+    active_ingredients = Column(JSON, nullable=True)
+    scanned_text = Column(Text, nullable=True)
+    dosage = Column(String(length=255), nullable=True)
+    prescription_details = Column(JSON, nullable=True)
+
+    # Relationship to maintain a bidirectional link with Profile
+    profile = relationship("Profile", back_populates="medications")
+
+    def __repr__(self):
+        return f"<Medication id={self.id} title='{self.title}'>"
