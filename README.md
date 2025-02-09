@@ -1,129 +1,116 @@
+# **Meds Recognition**
 
-# **MedsRecognition**  
-*MedsRecognition* is a Django-based application designed to extract text from uploaded images using EasyOCR and identify active ingredients in medications by querying public APIs such as **RxNav** and **OpenFDA**. The application also integrates with **Supabase** for efficient data storage and management.
+## Overview
 
-> **⚠️ Note**: This project is a work in progress. Some features may not yet be fully implemented or finalized.
+MedsRecognition is a Django-based application designed to recognize medications from scanned images. The recognition workflow consists of extracting text via OCR, then leveraging a remote biomedical Named Entity Recognition (NER) service to identify active ingredients within the extracted text.
 
----
+> **⚠️ Note**: This project is a work in progress, created for educational purposes to explore new technology stacks and AI/ML possibilities. Some features may not be fully implemented or finalized.
 
-## **Table of Contents**  
-1. [Features](#features)  
-2. [Prerequisites](#prerequisites)  
-3. [Installation](#installation)  
-4. [How It Works](#how-it-works)  
-5. [APIs and Integrations](#apis-and-integrations)  
-6. [Usage](#usage)  
-7. [License](#license)  
-8. [Contact](#contact)  
+## Table of Contents
 
----
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Environment Variables](#environment-variables)
+- [Installing and Running Locally](#installing-and-running-locally)
+- [Docker Usage](#docker-usage)
+- [Contributing](#contributing)
+- [License](#license)
 
-## **Features**  
-- Upload images to extract text seamlessly.  
-- Supports multiple image formats (e.g., JPEG, PNG).  
-- Utilizes **EasyOCR** for highly accurate text recognition.  
-- Matches recognized text with active ingredients using **RxNav** and **OpenFDA APIs**.  
-- Integrates with **Supabase** for centralized storage and data management.  
+## Features
 
----
+### 1. **OCR for Medication Recognition**  
+- Converts uploaded images into text.
+- Passes extracted text to a remote biomedical service for active ingredient detection.
 
-## **Prerequisites**  
-- Python 3.8+  
-- Pip (Python package manager)  
-- Supabase account and project configuration  
+### 2. **Biomed Service Integration**  
+- Connects to an external NER API for processing recognized text.  
+- For more information on the NER service, refer to:  
+  [BiomedNER GitHub Repository](https://github.com/SPerekrestova/BiomedNER).
 
----
+### 3. **Authentication and Profile Management**  
+- Provides user sign-up and sign-in via Supabase integration.  
+- Stores user profiles within the Django application.
 
-## **Installation**  
+### 4. **API Endpoints**  
+- Includes endpoints suitable for mobile or web clients to interact with user and medication data.  
+- Allows scanning (via OCR) and subsequent recognition of medication ingredients.
 
-1. **Clone the Repository**:  
-   ```bash
-   git clone https://github.com/SPerekrestova/MedsRecognition.git
-   cd MedsRecognition
-   ```
+### 5. **Docker Support**  
+- A Dockerfile is provided for containerizing and deploying the application.
 
-2. **Install Dependencies**:  
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Project Structure
 
-3. **Set Up Supabase**:  
-   - Create a **Supabase** project [here](https://supabase.com).  
-   - Note your **API key** and **project URL** from the Supabase dashboard.  
-   - Add these values to your `.env` file:  
-     ```env
-     SUPABASE_URL=<your-supabase-url>
-     SUPABASE_API_KEY=<your-supabase-api-key>
-     ```
+The project consists of the following key components:
 
-4. **Apply Migrations** *(if applicable)*:  
-   ```bash
-   python manage.py migrate
-   ```
+### **biomed_ner_client.py**
+- Contains a client class to call the remote BiomedNER API.
+- Sends scanned text to the external service and processes the returned list of recognized entities.
+- Uses environment variables for configuration:
+  - `BIOMED_HOST` (required)
+  - `BIOMED_SCHEME` (optional, defaults to `http`)
 
-5. **Run the Django Server**:  
-   ```bash
-   python manage.py runserver
-   ```
+### **ocr_service.py**
+- Integrates the external BiomedNER client after performing OCR.
+- Submits extracted text to the BiomedNER service and retrieves recognized ingredients.
 
 ---
 
-## **How It Works**  
+## Prerequisites
 
-### 1. **Upload Image**  
-- Users upload images containing text via the web interface. Supported formats include JPEG, PNG, and more.  
+- Python 3  
+- Docker (optional for containerization)  
 
-### 2. **Text Recognition**  
-- The uploaded image is processed using **EasyOCR**, which extracts text with support for multiple languages.  
+## Environment Variables
 
-### 3. **Database Matching**  
-- Extracted text is matched against a list of active ingredients fetched in real-time using the **RxNav API** and **OpenFDA API**.  
+The application relies on the following environment variables:
 
-### 4. **Supabase Integration**  
-- Recognized text, extracted active ingredients, and associated metadata are securely stored in a **Supabase** database.  
-- This allows for centralized data management and retrieval for analytics or future use.  
+- `BIOMED_HOST` – Host address for the BiomedNER service.  
+- `BIOMED_SCHEME` – Optional scheme (http/https) for the BiomedNER service.  
 
-### 5. **Results Display**  
-- Matched active ingredients are displayed in a user-friendly interface, allowing for easy review and further use.  
+Additional Supabase or project-related variables can be configured for authentication and other features.
 
----
+## Installing and Running Locally
 
-## **APIs and Integrations**  
+1. **Clone the Repository**  
+   Obtain the source files and navigate into the project directory.
 
-### **1. Public APIs Queried**:  
-- **RxNav API**:  
-  - Provides a comprehensive database of active ingredients in medications.  
-  - Official documentation: [RxNav API](https://lhncbc.nlm.nih.gov/RxNav/APIsOverview.html).  
+2. **Setup a Virtual Environment (Recommended)**  
+   Install any standard Python environment management tool and activate it.
 
-- **OpenFDA API**:  
-  - Offers access to FDA drug, device, and food databases for additional validation and matching.  
-  - Official documentation: [OpenFDA API](https://api.fda.gov).  
+3. **Install Dependencies**  
+```shell script
+pip install -r requirements.txt
+```
 
-### **2. Supabase Integration**:  
-- Supabase is used to store:  
-  - Uploaded image metadata  
-  - Recognized text  
-  - Matched active ingredients  
-  - User interaction history (optional)  
-- Learn more: [Supabase Documentation](https://supabase.com/docs).  
+4. **Configure Environment Variables**  
+   Make sure to set the BiomedNER service details (BIOMED_HOST and BIOMED_SCHEME).
 
----
+5. **Run Migrations**  
+```shell script
+python manage.py migrate
+```
 
-## **Usage**  
+6. **Start the Django Development Server**  
+```shell script
+python manage.py runserver
+```
+   Access the interface or endpoints at: http://127.0.0.1:8000.
 
-1. Start the Django server:  
-   ```bash
-   python manage.py runserver
-   ```
+## Docker Usage
 
-2. Open your web browser and navigate to:  
-   ```
-   http://localhost:8000/
-   ```
+To build and run the Docker image:
 
-3. Upload an image containing text.  
+1. **Build the Image**  
+```shell script
+docker build -t medsrecognition .
+```
 
-4. View the extracted text, matched active ingredients, and metadata.  
+2. **Run the Container**  
+```shell script
+docker run -p 8000:8000 medsrecognition
+```
+   The application will be available at: http://localhost:8000
 
 ---
 
