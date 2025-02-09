@@ -16,13 +16,15 @@ def supabase_signup_view(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
-        username = request.POST.get("username", email)
+        request.POST.get("username", email)
 
         try:
             result = sign_up_user(email, password)
-            if result and result.user:
-                # Create a profile for the new user
-                Profile.objects.create(user_id=result.user.id, display_name=username)
+            if result and hasattr(result, "user"):
+                request.session["supabase_user"] = result.user.id
+                request.user = result.user
+
+                Profile.objects.create(user_id=result.user.id, defaults={"display_name": email})
                 messages.success(request, "Signed up successfully. Please log in.")
                 return render(request, "recognition/login.html")
             else:
