@@ -5,7 +5,10 @@ from decouple import config
 
 SECRET_KEY = "your-secret-key"
 DEBUG = True
-ALLOWED_HOSTS = ["165.232.73.98"]
+ALLOWED_HOSTS = ["165.232.73.98", "localhost", "127.0.0.1"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://165.232.73.98",
+]
 
 INSTALLED_APPS = [
     "django.contrib.sessions",
