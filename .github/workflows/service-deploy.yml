@@ -2,16 +2,11 @@ name: Build & Deploy MedsRecognition service
 
 on:
   pull_request:
-    types: [closed]
-    branches:
-      - master
-  push:
-    branches:
-      - master
+    types: [opened, synchronize]
 
 jobs:
   build_and_push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3

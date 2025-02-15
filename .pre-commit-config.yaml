@@ -1,19 +1,35 @@
 ---
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      -   id: trailing-whitespace
+          exclude: ^.*\.md$
+      -   id: end-of-file-fixer
+      -   id: check-yaml
+      -   id: debug-statements
+      -   id: name-tests-test
+      -   id: requirements-txt-fixer
+
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 25.1.0
     hooks:
       - id: black
         args: ["--line-length=100"]
 
-  - repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: v2.0.2
+  - repo: https://github.com/hhatto/autopep8
+    rev: v2.3.2
     hooks:
       - id: autopep8
         args: ["--in-place", "--aggressive", "--max-line-length=100"]
 
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.287
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.6
     hooks:
       - id: ruff
         args: ["--fix"]
+
+  - repo: https://github.com/pycqa/pylint
+    rev: v3.3.4
+    hooks:
+      - id: pylint
