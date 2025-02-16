@@ -1,14 +1,14 @@
-# MedsRecognition: Medication Intersection Project
+# PillChecker: Medication Intersection Project
 
-Welcome to MedsRecognition – a project born out of my love for coding and healthcare. This is my playground for learning new tech, experimenting with AI, and solving real-world challenges.
+Welcome to PillChecker – a project born out of my love for coding and healthcare. This is my playground for learning new tech, experimenting with AI, and solving real-world challenges.
 
 ## Project Overview
 
-MedsRecognition is designed to simplify the process of managing medication interactions. Instead of rummaging through instructions or searching online, this project aims to provide a straightforward solution.
+PillChecker is designed to simplify the process of managing medication interactions. Instead of rummaging through instructions or searching online, this project aims to provide a straightforward solution.
 
 ## Idea & Purpose
 
-The concept behind MedsRecognition is straightforward. Imagine you need a painkiller but are already taking other medications. MedsRecognition helps ensure safety by managing and checking medication interactions.
+The concept behind PillChecker is straightforward. Imagine you need a painkiller but are already taking other medications. PillChecker helps ensure safety by managing and checking medication interactions.
 
 ## Tech Stack & Tools
 
@@ -24,11 +24,11 @@ The concept behind MedsRecognition is straightforward. Imagine you need a painki
 
 ## Frontend UI
 
-The user interface is a vital part of MedsRecognition. The UI project is maintained in a separate repository: [MedsRecognition-Frontend](https://github.com/SPerekrestova/MedsRecognition-Frontend). This sleek, user-friendly interface is crafted by [Dan K.](https://github.com/dankrasilnikov).
+The user interface is a vital part of PillChecker. This sleek, user-friendly interface is crafted by [Dan K.](https://github.com/dankrasilnikov).
 
 ## Challenges & Learnings
 
-Building MedsRecognition was a journey full of learning and experimentation. Here are some hurdles I overcame:
+Building PillChecker was a journey full of learning and experimentation. Here are some hurdles I overcame:
 - Switching between different Python frameworks to build a full-featured web app and API.
 - Integrating image processing and text extraction to reliably scan medicine packs.
 - Optimizing performance while managing the heavy memory needs of large language models.
@@ -43,20 +43,19 @@ There’s plenty more on the horizon! Here’s what I’m planning next:
 - **Feature Expansion:** Adding personalized medication recommendations and smarter alerts.
 - **Advanced AI Techniques:** Exploring improved OCR and NLP methods.
 
-## Links & References
+## Links & Acknowledgments
 
-Check out the project repositories and learn more about the tools I used:
-- [MedsRecognition project](https://github.com/SPerekrestova/PillChecker/tree/master/MedsRecognition)
-- [BiomedNER project](https://github.com/SPerekrestova/PillChecker/tree/master/BiomedNER)
-- [UI project](https://github.com/SPerekrestova/PillChecker/tree/master/Frontend)
+A huge thanks to [Dan K.](https://github.com/dankrasilnikov) for the UI part and [Hiddenmarten](https://github.com/hiddenmarten) for the whole DevOps support!
 
-Other useful resources:
+Check out the tools I used:
 - [SciSpacy (en_ner_bc5cdr_md model)](https://github.com/allenai/scispacy)
 - [RxNorm Linker](https://www.nlm.nih.gov/research/umls/rxnorm/index.html)
 - [World Health Organization](https://www.who.int)
 
 ## Conclusion
 
-MedsRecognition reflects my passion for both healthcare and tech. It’s a hands-on example of how quickly you can learn a new tech stack and build something that truly makes a difference.
+PillChecker reflects my passion for both healthcare and tech. It’s a hands-on example of how quickly you can learn a new tech stack and build something that truly makes a difference.
 
-&copy; 2025 Svetlana Perekrestova. All Rights Reserved.
+## **License**  
+
+This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for details.  

@@ -2,8 +2,6 @@
 
 This service provides named entity recognition (NER) and entity linking for biomedical text using spaCy with a scispaCy model. It exposes a REST API built with FastAPI to process text and return entities along with their medical details.
 
-> **⚠️ Note**: This project is a work in progress, created for educational purposes to explore new technology stacks and AI/ML possibilities. Some features may not be fully implemented or finalized.
-
 ## Overview
 
 - **Input:** JSON payload with a text field.

@@ -1,14 +1,6 @@
-Below is a complete README template for your Expo-based MedsRecognition Frontend application. This document explains the project’s purpose, outlines the folder structure, describes local and Docker-based development workflows, and provides contribution guidelines.
-
----
-
-# MedsRecognition Frontend
-
 ## Overview
 
-**MedsRecognition Frontend** is a cross-platform mobile and web application built with Expo and React Native. It serves as the frontend for the MedsRecognition ecosystem by allowing users to capture images of medications and view recognition results. The app is designed to run seamlessly on Android, iOS, and web platforms while interfacing with backend services that perform OCR and active ingredient recognition.
-
-> **⚠️ Note:** This project is under active development and is intended for educational and exploratory purposes. Some features may be experimental or subject to change.
+This is a cross-platform mobile and web application built with Expo and React Native. It serves as the frontend for the PillChecker ecosystem by allowing users to capture images of medications and view recognition results. The app is designed to run seamlessly on Android, iOS, and web platforms while interfacing with backend services that perform OCR and active ingredient recognition.
 
 ## Table of Contents
 
@@ -18,9 +10,6 @@ Below is a complete README template for your Expo-based MedsRecognition Frontend
 - [Environment Variables](#environment-variables)
 - [Installing and Running Locally](#installing-and-running-locally)
 - [Docker Setup](#docker-setup)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
 
 ## Features
 
@@ -134,44 +123,3 @@ For a consistent development environment or to simplify deployment, you can run 
    ```bash
    docker-compose up
    ```
-
-## Contributing
-
-Contributions are welcome! To contribute:
-
-1. Fork the repository and create your feature branch:
-
-   ```bash
-   git checkout -b feature/YourFeature
-   ```
-
-2. Commit your changes with a descriptive message. Meet the [commit convention](https://www.conventionalcommits.org/en/v1.0.0/):
-
-   ```bash
-   git commit -m "feat: feature name"
-   ```
-
-3. Push your branch to your fork:
-
-   ```bash
-   git push origin feature/YourFeature
-   ```
-
-4. Open a pull request and follow the contribution guidelines.
-
-Please ensure that your code follows the project’s coding standards and includes relevant tests.
-
-## License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for more details.
-
-## Contact
-
-For questions or feedback, please reach out to:
-
-**UI Author**: Daniil Krasilnikov  
-**UI Author Email**: [krasilnikov.orchid@gmail.com](mailto:krasilnikov.orchid@gmail.com)
-**Idea Author Email**: [svetlana.perekrestova2@gmail.com](mailto:svetlana.perekrestova2@gmail.com)
-**GitHub**: [SPerekrestova/medsrecognition-frontend](https://github.com/SPerekrestova/medsrecognition-frontend)
-
-Feel free to reach out with questions, suggestions, or feedback!

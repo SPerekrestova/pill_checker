@@ -1,10 +1,9 @@
-# **Meds Recognition**
+# **PillChecker**
 
 ## Overview
 
-MedsRecognition is a Django-based application designed to recognize medications from scanned images. The recognition workflow consists of extracting text via OCR, then leveraging a remote biomedical Named Entity Recognition (NER) service to identify active ingredients within the extracted text.
+PillChecker is a Django-based application designed to recognize medications from scanned images. The recognition workflow consists of extracting text via OCR, then leveraging a remote biomedical Named Entity Recognition (NER) service to identify active ingredients within the extracted text.
 
-> **⚠️ Note**: This project is a work in progress, created for educational purposes to explore new technology stacks and AI/ML possibilities. Some features may not be fully implemented or finalized.
 
 ## Table of Contents
 
@@ -111,18 +110,3 @@ docker build -t medsrecognition .
 docker run -p 8000:8000 medsrecognition
 ```
    The application will be available at: http://localhost:8000
-
----
-
-## **License**  
-
-This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](../LICENSE) file for details.  
-
----
-
-## **Contact**  
-
-**Author**: Svetlana Perekrestova  
-**Email**: [svetlana.perekrestova2@gmail.com](mailto:svetlana.perekrestova2@gmail.com)  
-
-Feel free to reach out with questions, suggestions, or feedback!  
