@@ -5,8 +5,8 @@ from fastapi.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from core.auth_views import SupabaseAuthRoutes
-from core.medication_views import MedicationRoutes
+from core.app.api.v1.auth_views import SupabaseAuthRoutes
+from core.app.api.v1.medication_views import MedicationRoutes
 
 
 class AppEntry:

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PillChecker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Welcome to Your Dashboard</h2>
+        <div class="card mb-4">
+            <div class="card-header">
+                Upload New Medication Image
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('upload_medication') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Select Image</label>
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload and Analyze</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Your Recent Medications
+            </div>
+            <div class="card-body">
+                {% if medications %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Medication Name</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for med in medications %}
+                                <tr>
+                                    <td>{{ med.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ med.name }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ med.status_color }}">
+                                            {{ med.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('medication_detail', id=med.id) }}" 
+                                           class="btn btn-sm btn-info">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center">No medications found. Upload your first medication image above!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Add any dashboard-specific JavaScript here
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize any dashboard components
+    });
+</script>
+{% endblock %} 
