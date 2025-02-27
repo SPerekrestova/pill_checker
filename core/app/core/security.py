@@ -17,7 +17,14 @@ from .config import settings
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 # Rate limiting configuration
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[
+        f"{settings.RATE_LIMIT_PER_SECOND} per second",
+        f"{settings.RATE_LIMIT_PER_MINUTE} per minute",
+        f"{settings.RATE_LIMIT_PER_HOUR} per hour",
+    ],
+)
 
 
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> Response:
@@ -115,8 +122,7 @@ def setup_security(app: FastAPI) -> None:
     # Trusted hosts middleware (only in production)
     if not settings.DEBUG:
         app.add_middleware(
-            TrustedHostMiddleware,
-            allowed_hosts=["*"],  # Configure with your domain in production
+            TrustedHostMiddleware, allowed_hosts=[str(host) for host in settings.TRUSTED_HOSTS]
         )
 
     # Rate limiting

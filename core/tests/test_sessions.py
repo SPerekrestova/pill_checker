@@ -1,6 +1,7 @@
 """Tests for session management."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
+import uuid
 
 import pytest
 from fastapi import FastAPI, Depends
@@ -11,10 +12,11 @@ from app.core.security import setup_security
 
 # Test data
 TEST_TOKEN = "test_token"
+TEST_USER_ID = str(uuid.uuid4())
 TEST_USER_DATA = {
-    "id": "123",
+    "id": TEST_USER_ID,
     "email": "test@example.com",
-    "profile": {"id": 1, "display_name": "Test User", "bio": "Test bio"},
+    "profile": {"id": TEST_USER_ID, "username": "Test User", "bio": "Test bio"},
 }
 
 

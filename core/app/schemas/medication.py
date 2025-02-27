@@ -1,7 +1,8 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Dict, Any, List
-from pydantic import Field, HttpUrl, conint, constr
+from uuid import UUID
+from pydantic import Field, HttpUrl, constr
 
 from .base import BaseSchema
 
@@ -24,7 +25,7 @@ class MedicationBase(BaseSchema):
     active_ingredients: Optional[constr(min_length=1, max_length=500)] = Field(
         None, description="Active ingredients list"
     )
-    ocr_text: Optional[constr(min_length=1)] = Field(None, description="Text extracted from image")
+    scanned_text: Optional[constr(min_length=1)] = Field(None, description="Text extracted from image")
     dosage: Optional[constr(min_length=1, max_length=100)] = Field(
         None, description="Medication dosage"
     )
@@ -36,8 +37,8 @@ class MedicationBase(BaseSchema):
 class MedicationCreate(MedicationBase):
     """Schema for creating a medication."""
 
-    profile_id: conint(gt=0) = Field(..., description="Profile ID")
-    image_url: HttpUrl = Field(..., description="URL of the uploaded image")
+    profile_id: UUID = Field(..., description="Profile ID")
+    scan_url: HttpUrl = Field(..., description="URL of the uploaded medication scan")
 
 
 class MedicationUpdate(MedicationBase):
@@ -52,15 +53,16 @@ class MedicationUpdate(MedicationBase):
 class MedicationInDB(MedicationBase):
     """Schema for medication in database."""
 
-    id: conint(gt=0)
-    profile_id: conint(gt=0)
-    scan_date: datetime = Field(..., description="Date when medication was scanned")
+    id: int
+    profile_id: UUID
+    created_at: datetime
+    updated_at: datetime
 
 
 class MedicationResponse(MedicationInDB):
     """Schema for medication response."""
 
-    image_url: Optional[HttpUrl] = Field(None, description="URL of the medication image")
+    scan_url: Optional[HttpUrl] = Field(None, description="URL of the uploaded medication scan")
     status: MedicationStatus = Field(
         default=MedicationStatus.PENDING, description="Current status of the medication"
     )
@@ -70,17 +72,12 @@ class MedicationResponse(MedicationInDB):
         description="Bootstrap color class for status",
     )
 
-    @property
-    def formatted_scan_date(self) -> str:
-        """Return formatted scan date."""
-        return self.scan_date.strftime("%Y-%m-%d %H:%M")
-
 
 class PaginatedResponse(BaseSchema):
     """Schema for paginated response."""
 
     items: List[MedicationResponse]
-    total: conint(ge=0) = Field(..., description="Total number of items")
-    page: conint(ge=1) = Field(..., description="Current page number")
-    size: conint(ge=1, le=100) = Field(..., description="Items per page")
-    pages: conint(ge=0) = Field(..., description="Total number of pages")
+    total: int = Field(..., description="Total number of items")
+    page: int = Field(..., description="Current page number")
+    size: int = Field(..., description="Items per page")
+    pages: int = Field(..., description="Total number of pages")

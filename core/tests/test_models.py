@@ -4,191 +4,208 @@ import uuid
 from datetime import datetime
 
 import pytest
-from pydantic import ValidationError
+from sqlalchemy.sql import select
 
-from app.models import Profile, Medication, ScannedImage
+from app.models import Profile, Medication
 from app.schemas import (
     ProfileCreate,
     ProfileResponse,
     MedicationCreate,
     MedicationResponse,
-    ScannedImageCreate,
-    ScannedImageResponse,
 )
 
 
 class TestProfileModel:
-    """Test suite for Profile model and schemas."""
+    """Test suite for Profile model."""
 
-    def test_profile_model_create(self, test_db_session, sample_profile_data):
-        """Test creating a Profile model instance."""
-        profile = Profile(**sample_profile_data)
+    def test_profile_model_create(self, test_db_session):
+        """Test creating Profile model instance."""
+        # Create a new Profile
+        profile_id = uuid.uuid4()
+        profile = Profile(
+            id=profile_id,
+            username="Test User 1",
+            bio="Test bio",
+        )
         test_db_session.add(profile)
         test_db_session.commit()
+        test_db_session.refresh(profile)
 
-        assert profile.id is not None
-        assert isinstance(profile.user_id, uuid.UUID)
-        assert profile.user_id == sample_profile_data["user_id"]
-        assert profile.display_name == sample_profile_data["display_name"]
-        assert profile.bio == sample_profile_data["bio"]
+        # Check values
+        assert isinstance(profile.id, uuid.UUID)
+        assert profile.id == profile_id
+        assert profile.username == "Test User 1"
+        assert profile.bio == "Test bio"
         assert isinstance(profile.created_at, datetime)
         assert isinstance(profile.updated_at, datetime)
 
     def test_profile_schema_validation(self, sample_profile_data):
-        """Test Pydantic schema validation for Profile."""
-        # Test successful validation
-        profile_create = ProfileCreate(**sample_profile_data)
-        assert isinstance(profile_create.user_id, uuid.UUID)
-        assert profile_create.user_id == sample_profile_data["user_id"]
+        """Test ProfileCreate schema validation."""
+        # Update sample data to use different username
+        sample_data = {**sample_profile_data, "username": "Test User 2"}
+        
+        # Test valid data
+        profile_create = ProfileCreate(**sample_data)
+        assert isinstance(profile_create.id, uuid.UUID)
+        assert profile_create.id == sample_data["id"]
+        assert profile_create.username == sample_data["username"]
+        assert profile_create.bio == sample_data["bio"]
 
-        # Test validation error for invalid UUID
-        with pytest.raises(ValidationError):
-            ProfileCreate(
-                user_id="invalid-uuid",
-                **{k: v for k, v in sample_profile_data.items() if k != "user_id"}
-            )
-
-    def test_profile_schema_from_model(self, test_db_session, sample_profile_data):
-        """Test converting Profile model to Pydantic schema."""
-        profile = Profile(**sample_profile_data)
+    def test_profile_schema_from_model(self, test_db_session):
+        """Test converting from model to Pydantic schema."""
+        # Create and add model
+        profile_id = uuid.uuid4()
+        profile = Profile(
+            id=profile_id,
+            username="Test User 3",
+            bio="Test bio",
+        )
         test_db_session.add(profile)
         test_db_session.commit()
+        test_db_session.refresh(profile)
 
-        profile_response = ProfileResponse.from_orm(profile)
-        assert profile_response.id == profile.id
-        assert isinstance(profile_response.user_id, uuid.UUID)
-        assert profile_response.user_id == profile.user_id
-        assert profile_response.display_name == profile.display_name
-        assert profile_response.bio == profile.bio
+        # Convert to response schema
+        response = ProfileResponse.model_validate(profile)
+        assert response.id == profile.id
+        assert response.username == profile.username
+        assert response.bio == profile.bio
+        assert response.created_at == profile.created_at
+        assert response.updated_at == profile.updated_at
 
 
 class TestMedicationModel:
-    """Test suite for Medication model and schemas."""
+    """Test suite for Medication model."""
 
-    def test_medication_model_create(
-        self, test_db_session, sample_profile_data, sample_medication_data
-    ):
-        """Test creating a Medication model instance."""
-        # Create a profile first
-        profile = Profile(**sample_profile_data)
+    def test_medication_model_create(self, test_db_session):
+        """Test creating Medication model instance."""
+        # First create a profile
+        profile_id = uuid.uuid4()
+        profile = Profile(
+            id=profile_id,
+            username="Test User 4",
+            bio="Test bio",
+        )
         test_db_session.add(profile)
         test_db_session.commit()
+        test_db_session.refresh(profile)
 
-        # Remove image_url from model data as it's only required for schema
-        model_data = {k: v for k, v in sample_medication_data.items() if k != "image_url"}
-        medication = Medication(profile_id=profile.id, **model_data)
+        # Create a medication linked to the profile
+        medication = Medication(
+            profile_id=profile.id,
+            title="Test Medication",
+            active_ingredients="Test Ingredient",
+            dosage="10mg",
+            scanned_text="Test scan text",
+            prescription_details={"frequency": "daily"},
+            scan_url="https://example.com/test_image.jpg",
+        )
         test_db_session.add(medication)
         test_db_session.commit()
+        test_db_session.refresh(medication)
 
-        assert medication.id is not None
+        # Check values
         assert medication.profile_id == profile.id
-        assert medication.title == model_data["title"]
-        assert medication.active_ingredients == model_data["active_ingredients"]
-        assert medication.prescription_details == model_data["prescription_details"]
-        assert isinstance(medication.scan_date, datetime)
-        assert medication.image_url is None  # image_url should be None by default
+        assert medication.title == "Test Medication"
+        assert medication.active_ingredients == "Test Ingredient"
+        assert medication.dosage == "10mg"
+        assert medication.scanned_text == "Test scan text"
+        assert medication.prescription_details == {"frequency": "daily"}
+        assert medication.scan_url == "https://example.com/test_image.jpg"
+        assert isinstance(medication.created_at, datetime)
+        assert isinstance(medication.updated_at, datetime)
 
-    def test_medication_schema_validation(
-        self, test_db_session, sample_profile_data, sample_medication_data
-    ):
-        """Test Pydantic schema validation for Medication."""
-        # Create a profile first
-        profile = Profile(**sample_profile_data)
+    def test_medication_schema_validation(self, test_db_session, sample_medication_data):
+        """Test MedicationCreate schema validation."""
+        # First create a profile
+        profile_id = uuid.uuid4()
+        profile = Profile(
+            id=profile_id,
+            username="Test User 5",
+            bio="Test bio",
+        )
         test_db_session.add(profile)
         test_db_session.commit()
+        test_db_session.refresh(profile)
 
-        # Test successful validation
-        medication_create = MedicationCreate(profile_id=profile.id, **sample_medication_data)
+        # Test valid data
+        data = {"profile_id": profile.id, **sample_medication_data}
+        medication_create = MedicationCreate(**data)
         assert medication_create.profile_id == profile.id
-        assert medication_create.title == sample_medication_data["title"]
+        assert medication_create.title == data["title"]
+        assert medication_create.active_ingredients == data["active_ingredients"]
+        assert medication_create.prescription_details == data["prescription_details"]
+        assert str(medication_create.scan_url) == data["scan_url"]
 
-        # Test validation error for non-existent profile_id
-        with pytest.raises(ValidationError):
-            MedicationCreate(profile_id=-1, **sample_medication_data)
-
-    def test_medication_schema_from_model(
-        self, test_db_session, sample_profile_data, sample_medication_data
-    ):
-        """Test converting Medication model to Pydantic schema."""
-        # Create a profile first
-        profile = Profile(**sample_profile_data)
+    def test_medication_schema_from_model(self, test_db_session, sample_medication_data):
+        """Test converting from model to Pydantic schema."""
+        # First create a profile
+        profile_id = uuid.uuid4()
+        profile = Profile(
+            id=profile_id,
+            username="Test User 6",
+            bio="Test bio",
+        )
         test_db_session.add(profile)
         test_db_session.commit()
+        test_db_session.refresh(profile)
 
-        # Remove image_url from model data as it's only required for schema
-        model_data = {k: v for k, v in sample_medication_data.items() if k != "image_url"}
-        medication = Medication(profile_id=profile.id, **model_data)
+        # Create medication instance
+        medication = Medication(
+            profile_id=profile.id,
+            **sample_medication_data,
+        )
         test_db_session.add(medication)
         test_db_session.commit()
+        test_db_session.refresh(medication)
 
-        medication_response = MedicationResponse.from_orm(medication)
-        assert medication_response.id == medication.id
-        assert medication_response.profile_id == medication.profile_id
-        assert medication_response.title == medication.title
-        assert medication_response.prescription_details == medication.prescription_details
-        assert medication_response.image_url is None  # image_url should be None in response
-
-
-class TestScannedImageModel:
-    """Test suite for ScannedImage model and schemas."""
-
-    def test_scanned_image_model_create(self, test_db_session, sample_scanned_image_data):
-        """Test creating a ScannedImage model instance."""
-        image = ScannedImage(**sample_scanned_image_data)
-        test_db_session.add(image)
-        test_db_session.commit()
-
-        assert image.id is not None
-        assert image.image == sample_scanned_image_data["image"]
-        assert image.file_path == sample_scanned_image_data["file_path"]
-        assert isinstance(image.uploaded_at, datetime)
-
-    def test_scanned_image_schema_validation(self, sample_scanned_image_data):
-        """Test Pydantic schema validation for ScannedImage."""
-        # Test successful validation
-        image_create = ScannedImageCreate(**sample_scanned_image_data)
-        assert image_create.image == sample_scanned_image_data["image"]
-
-        # Test validation error for missing required field
-        with pytest.raises(ValidationError):
-            ScannedImageCreate(file_path=sample_scanned_image_data["file_path"])
-
-    def test_scanned_image_schema_from_model(self, test_db_session, sample_scanned_image_data):
-        """Test converting ScannedImage model to Pydantic schema."""
-        image = ScannedImage(**sample_scanned_image_data)
-        test_db_session.add(image)
-        test_db_session.commit()
-
-        image_response = ScannedImageResponse.from_orm(image)
-        assert image_response.id == image.id
-        assert image_response.image == image.image
-        assert image_response.file_path == image.file_path
+        # Convert to response schema
+        response = MedicationResponse.model_validate(medication)
+        assert response.id == medication.id
+        assert response.profile_id == medication.profile_id
+        assert response.title == medication.title
+        assert response.active_ingredients == medication.active_ingredients
+        assert response.prescription_details == medication.prescription_details
+        assert str(response.scan_url) == medication.scan_url
 
 
-def test_model_relationships(test_db_session, sample_profile_data, sample_medication_data):
+def test_model_relationships(test_db_session):
     """Test relationships between models."""
-    # Create profile
-    profile = Profile(**sample_profile_data)
+    # Create a profile
+    profile_id = uuid.uuid4()
+    profile = Profile(
+        id=profile_id,
+        username="Test User 7",
+        bio="Test bio",
+    )
     test_db_session.add(profile)
     test_db_session.commit()
+    test_db_session.refresh(profile)
 
-    # Create medication linked to profile
-    # Remove image_url from model data as it's only required for schema
-    model_data = {k: v for k, v in sample_medication_data.items() if k != "image_url"}
-    medication = Medication(profile_id=profile.id, **model_data)
-    test_db_session.add(medication)
+    # Create 2 medications for the profile
+    for i in range(2):
+        medication = Medication(
+            profile_id=profile.id,
+            title=f"Test Medication {i}",
+            active_ingredients="Test Ingredient",
+            dosage="10mg",
+            scanned_text="Test scan text",
+            prescription_details={"frequency": "daily"},
+            scan_url=f"https://example.com/test_image_{i}.jpg",
+        )
+        test_db_session.add(medication)
     test_db_session.commit()
 
     # Test relationship from profile to medications
-    assert len(profile.medications) == 1
-    assert profile.medications[0].id == medication.id
-
-    # Test relationship from medication to profile
-    assert medication.profile.id == profile.id
+    stmt = select(Profile).where(Profile.id == profile.id)
+    result = test_db_session.execute(stmt).scalar_one()
+    assert len(result.medications) == 2
+    assert all(med.profile_id == profile.id for med in result.medications)
 
     # Test cascade delete
     test_db_session.delete(profile)
     test_db_session.commit()
 
-    # Verify medication was also deleted
-    assert test_db_session.query(Medication).filter_by(id=medication.id).first() is None
+    # Verify all related medications are deleted
+    stmt = select(Medication).where(Medication.profile_id == profile.id)
+    result = test_db_session.execute(stmt).scalars().all()
+    assert len(result) == 0

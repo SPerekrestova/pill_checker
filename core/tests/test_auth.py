@@ -72,14 +72,14 @@ class TestAuthEndpoints:
                 "email": TEST_USER_EMAIL,
                 "password": TEST_USER_PASSWORD,
                 "password_confirm": TEST_USER_PASSWORD,
-                "display_name": TEST_DISPLAY_NAME,
+                "username": TEST_DISPLAY_NAME,
             },
         )
 
         assert response.status_code == 201
         assert response.json()["user_id"] == TEST_USER_ID
         mock_supabase_service.create_user_with_profile.assert_called_once_with(
-            email=TEST_USER_EMAIL, password=TEST_USER_PASSWORD, display_name=TEST_DISPLAY_NAME
+            email=TEST_USER_EMAIL, password=TEST_USER_PASSWORD, username=TEST_DISPLAY_NAME
         )
 
     def test_register_password_mismatch(self, test_client):

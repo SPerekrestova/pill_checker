@@ -23,22 +23,31 @@ class SupabaseService:
             options = ClientOptions(
                 postgrest_client_timeout=10,
                 storage_client_timeout=30,
+                # Add auth settings to ensure the correct path is used
+                auth={"url": "/auth/v1"},
+                auto_refresh_token=True
             )
 
+            # The SUPABASE_URL should be http://localhost:8000
+            # as we want to access it through the Kong gateway
             self.client = create_client(
                 settings.SUPABASE_URL, settings.SUPABASE_KEY, options=options
             )
 
             # Test connection
-            self.client.auth.get_session()
-            logger.info("Supabase client initialized successfully")
+            try:
+                self.client.auth.get_session()
+                logger.info("Supabase client initialized successfully")
+            except Exception as e:
+                logger.warning(f"Could not get session (this is normal for first startup): {e}")
+                pass
 
         except Exception as e:
             logger.error(f"Failed to initialize Supabase client: {e}")
             raise
 
     def create_user_with_profile(
-        self, email: str, password: str, display_name: Optional[str] = None
+        self, email: str, password: str, username: Optional[str] = None
     ) -> Optional[ProfileInDB]:
         """
         Create a new user and their profile.
@@ -46,7 +55,7 @@ class SupabaseService:
         Args:
             email: User's email
             password: User's password
-            display_name: Optional display name
+            username: Optional username
 
         Returns:
             dict: User data and profile data
@@ -65,13 +74,13 @@ class SupabaseService:
 
             # Create the profile
             profile_data = {
-                "user_id": str(user_id),  # Convert UUID to string
-                "display_name": display_name or email.split("@")[0],
+                "id": str(user_id),  # UUID is the primary key now
+                "username": username or email.split("@")[0],
                 "created_at": datetime.utcnow().isoformat(),
                 "updated_at": datetime.utcnow().isoformat(),
             }
 
-            self.client.table("profile").insert(profile_data).execute()
+            self.client.table("profiles").insert(profile_data).execute()
 
             return self.get_user_profile(user_id)
 
@@ -93,9 +102,9 @@ class SupabaseService:
         """
         try:
             response = (
-                self.client.from_("profile")
+                self.client.from_("profiles")
                 .select("*")
-                .eq("user_id", str(user_id))
+                .eq("id", str(user_id))
                 .single()
                 .execute()
             )
@@ -119,9 +128,9 @@ class SupabaseService:
         """
         try:
             response = (
-                self.client.from_("profile")
+                self.client.from_("profiles")
                 .update(profile_data.model_dump(exclude_unset=True, exclude_none=True))
-                .eq("user_id", str(user_id))
+                .eq("id", str(user_id))
                 .execute()
             )
 
@@ -134,7 +143,7 @@ class SupabaseService:
         """Delete user and their profile."""
         try:
             # Delete profile first (due to foreign key constraint)
-            (self.client.from_("profile").delete().eq("user_id", str(user_id)).execute())
+            (self.client.from_("profiles").delete().eq("id", str(user_id)).execute())
 
             # Delete auth user
             self.client.auth.admin.delete_user(str(user_id))
@@ -200,15 +209,15 @@ class SupabaseService:
             return None
 
     def create_profile_for_existing_user(
-        self, user_id: str, display_name: Optional[str] = None
+        self, user_id: str, username: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """Create a profile for an existing user."""
         try:
             # First check if profile exists
             existing_profile = (
-                self.client.from_("profile")
+                self.client.from_("profiles")
                 .select("*")
-                .eq("user_id", str(user_id))
+                .eq("id", str(user_id))
                 .single()
                 .execute()
             )
@@ -219,8 +228,8 @@ class SupabaseService:
 
             # Create new profile if it doesn't exist
             data = {
-                "user_id": str(user_id),
-                "display_name": display_name or "User",
+                "id": str(user_id),
+                "username": username or "User",
                 "created_at": datetime.utcnow().isoformat(),
                 "updated_at": datetime.utcnow().isoformat(),
             }
@@ -231,7 +240,7 @@ class SupabaseService:
             # Set auth header
             self.client.postgrest.auth(session.access_token)
 
-            profile_response = self.client.table("profile").insert(data).execute()
+            profile_response = self.client.table("profiles").insert(data).execute()
 
             if not profile_response.data:
                 logger.error("Failed to create profile")

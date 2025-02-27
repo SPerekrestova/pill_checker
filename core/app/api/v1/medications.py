@@ -47,7 +47,7 @@ async def upload_medication(
         # Create medication record
         medication_data = MedicationCreate(
             profile_id=current_user["id"],
-            image_url=public_url,
+            scan_url=public_url,
             ocr_text=ocr_text,
             status=MedicationStatus.PENDING,
         )

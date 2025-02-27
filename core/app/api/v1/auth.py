@@ -39,16 +39,16 @@ class UserCreate(BaseModel):
         pattern="^[A-Za-z0-9@$!%*#?&]*[A-Za-z][A-Za-z0-9@$!%*#?&]*[0-9][A-Za-z0-9@$!%*#?&]*$|^[A-Za-z0-9@$!%*#?&]*[0-9][A-Za-z0-9@$!%*#?&]*[A-Za-z][A-Za-z0-9@$!%*#?&]*$",
     )
     password_confirm: str = Field(..., description="Must match password field")
-    display_name: Optional[constr(min_length=2, max_length=50)] = Field(
-        None, description="Display name between 2 and 50 characters"
+    username: Optional[constr(min_length=3, max_length=50)] = Field(
+        None, description="Username between 3 and 50 characters"
     )
 
 
 class ProfileCreate(BaseModel):
     """Profile creation model."""
 
-    display_name: constr(min_length=2, max_length=50) = Field(
-        ..., description="Display name between 2 and 50 characters"
+    username: constr(min_length=3, max_length=50) = Field(
+        ..., description="Username between 3 and 50 characters"
     )
 
 
@@ -83,7 +83,7 @@ async def register(user_data: UserCreate):
     try:
         supabase = get_supabase_service()
         result = await supabase.create_user_with_profile(
-            email=user_data.email, password=user_data.password, display_name=user_data.display_name
+            email=user_data.email, password=user_data.password, username=user_data.username
         )
 
         if not result:
@@ -264,7 +264,7 @@ async def create_profile(
 
         # Create profile for the authenticated user
         profile = await supabase.create_profile_for_existing_user(
-            user_id=current_user["id"], display_name=profile_data.display_name
+            user_id=current_user["id"], username=profile_data.username
         )
 
         if not profile:
