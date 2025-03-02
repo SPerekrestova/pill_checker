@@ -12,6 +12,18 @@ from app.api.v1.dependencies import get_current_user
 router = APIRouter()
 
 
+def patch_session(session: dict) -> dict:
+    """
+    Patch the session object to include an `identity_id` field in each identity,
+    using the existing `id` value if `identity_id` is missing.
+    """
+    if session and "user" in session and "identities" in session["user"]:
+        for identity in session["user"]["identities"]:
+            if "identity_id" not in identity and "id" in identity:
+                identity["identity_id"] = identity["id"]
+    return session
+
+
 class Token(BaseModel):
     """Token response model."""
 
@@ -39,16 +51,16 @@ class UserCreate(BaseModel):
         pattern="^[A-Za-z0-9@$!%*#?&]*[A-Za-z][A-Za-z0-9@$!%*#?&]*[0-9][A-Za-z0-9@$!%*#?&]*$|^[A-Za-z0-9@$!%*#?&]*[0-9][A-Za-z0-9@$!%*#?&]*[A-Za-z][A-Za-z0-9@$!%*#?&]*$",
     )
     password_confirm: str = Field(..., description="Must match password field")
-    display_name: Optional[constr(min_length=2, max_length=50)] = Field(
-        None, description="Display name between 2 and 50 characters"
+    username: Optional[constr(min_length=3, max_length=50)] = Field(
+        None, description="Username between 3 and 50 characters"
     )
 
 
 class ProfileCreate(BaseModel):
     """Profile creation model."""
 
-    display_name: constr(min_length=2, max_length=50) = Field(
-        ..., description="Display name between 2 and 50 characters"
+    username: constr(min_length=3, max_length=50) = Field(
+        ..., description="Username between 3 and 50 characters"
     )
 
 
@@ -82,10 +94,11 @@ async def register(user_data: UserCreate):
 
     try:
         supabase = get_supabase_service()
-        result = await supabase.create_user_with_profile(
-            email=user_data.email, password=user_data.password, display_name=user_data.display_name
+        result = supabase.create_user_with_profile(
+            email=user_data.email, password=user_data.password, username=user_data.username
         )
-
+        # Patch the session response to include identity_id if missing
+        result = patch_session(result)
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Registration failed"
@@ -93,7 +106,7 @@ async def register(user_data: UserCreate):
 
         return {
             "message": "Registration successful. Please check your email for verification.",
-            "user_id": result["user_id"],
+            "user_id": str(result.id),  # Access the id attribute directly
         }
     except HTTPException:
         raise
@@ -111,16 +124,19 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
         supabase = get_supabase_service()
         try:
-            result = await supabase.authenticate_user(
+            success, result = supabase.authenticate_user(
                 email=form_data.username, password=form_data.password
             )
 
-            if not result:
+            if not success or not result:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Incorrect email or password",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
+
+            # Patch the session response to include identity_id if missing
+            result = patch_session(result)
 
             return {
                 "access_token": result["access_token"],
@@ -150,7 +166,8 @@ async def logout(response: Response):
     """Logout current user."""
     try:
         supabase = get_supabase_service()
-        await supabase.client.auth.sign_out()
+        if supabase.client:
+            supabase.client.auth.sign_out()
         response.delete_cookie("session")
         return {"message": "Successfully logged out"}
     except Exception as e:
@@ -165,20 +182,31 @@ async def refresh_token(token_data: RefreshToken):
     """Refresh access token using refresh token."""
     try:
         supabase = get_supabase_service()
-        response = await supabase.client.auth.refresh_session(token_data.refresh_token)
+        if not supabase.client:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Supabase client not initialized",
+            )
 
-        if not response or not response.session:
+        response_obj = supabase.client.auth.refresh_session(token_data.refresh_token)
+
+        if not response_obj or not response_obj.session:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        # Convert session to dict (if necessary) and patch it
+        session_obj = response_obj.session
+        session_dict = session_obj.dict() if hasattr(session_obj, "dict") else session_obj
+        session_dict = patch_session(session_dict)
+
         return {
-            "access_token": response.session.access_token,
+            "access_token": session_dict["access_token"],
             "token_type": "bearer",
             "expires_in": 3600,  # 1 hour
-            "refresh_token": response.session.refresh_token,
+            "refresh_token": session_dict["refresh_token"],
         }
     except HTTPException:
         raise
@@ -196,7 +224,8 @@ async def request_password_reset(email_data: EmailRequest):
     """Request password reset email."""
     try:
         supabase = get_supabase_service()
-        await supabase.client.auth.reset_password_email(email_data.email)
+        if supabase.client:
+            supabase.client.auth.reset_password_email(email_data.email)
         return {"message": "Password reset email sent"}
     except Exception as e:
         logger.error(f"Password reset request error: {e}")
@@ -214,8 +243,14 @@ async def reset_password(reset_data: PasswordReset):
 
     try:
         supabase = get_supabase_service()
+        if not supabase.client:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Supabase client not initialized",
+            )
+
         # Verify token
-        response = await supabase.client.auth.verify_otp(reset_data.token, type_="recovery")
+        response = supabase.client.auth.verify_otp(reset_data.token, type_="recovery")
 
         if not response:
             raise HTTPException(
@@ -223,7 +258,7 @@ async def reset_password(reset_data: PasswordReset):
             )
 
         # Update password
-        await supabase.client.auth.update_user({"password": reset_data.new_password})
+        supabase.client.auth.update_user({"password": reset_data.new_password})
         return {"message": "Password successfully reset"}
     except HTTPException:
         raise
@@ -239,7 +274,13 @@ async def verify_email(token: str):
     """Verify email address."""
     try:
         supabase = get_supabase_service()
-        response = await supabase.client.auth.verify_otp(token, type_="email")
+        if not supabase.client:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Supabase client not initialized",
+            )
+
+        response = supabase.client.auth.verify_otp(token, type_="email")
         if not response:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification token"
@@ -261,10 +302,15 @@ async def create_profile(
     """Create a profile for the authenticated user."""
     try:
         supabase = get_supabase_service()
+        if not supabase.client:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Supabase client not initialized",
+            )
 
         # Create profile for the authenticated user
-        profile = await supabase.create_profile_for_existing_user(
-            user_id=current_user["id"], display_name=profile_data.display_name
+        profile = supabase.create_profile_for_existing_user(
+            user_id=current_user["id"], username=profile_data.username
         )
 
         if not profile:
@@ -272,7 +318,7 @@ async def create_profile(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create profile"
             )
 
-        return {"message": "Profile created successfully", "profile": profile}
+        return {"message": "Profile created successfully", "profile": profile.model_dump()}
 
     except HTTPException:
         raise

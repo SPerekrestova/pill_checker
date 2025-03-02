@@ -29,7 +29,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         HTTPException: If token is invalid
     """
     supabase = get_supabase_service()
-    user_data = await supabase.verify_token(token)
+    # verify_token is not an async method
+    user_data = supabase.verify_token(token)
 
     if not user_data:
         raise HTTPException(

@@ -15,7 +15,14 @@ def setup_logging() -> logging.Logger:
 
     # Create logger
     logger = logging.getLogger("pillchecker")
-    logger.setLevel(getattr(logging, settings.LOG_LEVEL))
+
+    # Parse log level from settings, handling any comments
+    log_level = (
+        settings.LOG_LEVEL.split("#")[0].strip()
+        if "#" in settings.LOG_LEVEL
+        else settings.LOG_LEVEL
+    )
+    logger.setLevel(getattr(logging, log_level))
 
     # Create formatters
     console_format = logging.Formatter("%(levelname)s - %(message)s")
@@ -23,7 +30,7 @@ def setup_logging() -> logging.Logger:
 
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(getattr(logging, settings.LOG_LEVEL))
+    console_handler.setLevel(getattr(logging, log_level))
     console_handler.setFormatter(console_format)
 
     # File handler

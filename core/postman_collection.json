@@ -1,0 +1,218 @@
+{
+  "info": {
+    "name": "PillChecker API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "test_user4@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "testpassword123",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "testuser4",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/auth/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Register a new user"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "test_user4@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "testpassword123",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Login to get an access token"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints"
+    },
+    {
+      "name": "Medications",
+      "item": [
+        {
+          "name": "List Medications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/medications/list?page=1&size=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "medications", "list"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List all medications for the current user with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Recent Medications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/medications/recent?limit=5",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "medications", "recent"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Get recent medications for the current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Medication by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/medications/123",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "medications", "123"]
+            },
+            "description": "Get a specific medication by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Medication Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "/path/to/image.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/medications/upload",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "medications", "upload"]
+            },
+            "description": "Upload and process a medication image"
+          },
+          "response": []
+        }
+      ],
+      "description": "Medication management endpoints"
+    }
+  ],
+  "variable": [
+    {
+      "key": "access_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlMmE1MjZlOC01Yzc1LTQwMzktYTlkMS03ZTk4ZTAyNDIzMmMiLCJhdWQiOiIiLCJleHAiOjE3NDA4ODExMzgsImlhdCI6MTc0MDg3NzUzOCwiZW1haWwiOiJ0ZXN0X3VzZXI0QGV4YW1wbGUuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbCI6InRlc3RfdXNlcjRAZXhhbXBsZS5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwic3ViIjoiZTJhNTI2ZTgtNWM3NS00MDM5LWE5ZDEtN2U5OGUwMjQyMzJjIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NDA4Nzc1Mzh9XSwic2Vzc2lvbl9pZCI6IjNjYzk1ZGEwLWVjNmItNGFjNi05N2MxLTY5YWJkNjMxMzc3MiIsImlzX2Fub255bW91cyI6ZmFsc2V9.3rrIV7O5CXB2yYprsJmtHVPSBwgqY7nUUL2XORDZRJM",
+      "type": "string"
+    }
+  ]
+}

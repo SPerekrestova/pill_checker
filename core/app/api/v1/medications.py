@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 from supabase import Client, create_client
 
 from app.core.config import settings
@@ -24,7 +25,7 @@ supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 @router.post("/upload", response_model=MedicationResponse)
 async def upload_medication(
     image: UploadFile = File(...),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
     """Upload and process a medication image."""
@@ -47,15 +48,15 @@ async def upload_medication(
         # Create medication record
         medication_data = MedicationCreate(
             profile_id=current_user["id"],
-            image_url=public_url,
+            scan_url=public_url,
             ocr_text=ocr_text,
             status=MedicationStatus.PENDING,
         )
 
         medication = Medication(**medication_data.dict())
         db.add(medication)
-        db.commit()
-        db.refresh(medication)
+        await db.commit()
+        await db.refresh(medication)
 
         return MedicationResponse.from_orm(medication)
 
@@ -68,26 +69,33 @@ async def upload_medication(
 
 @router.get("/list", response_model=PaginatedResponse)
 async def list_medications(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
     page: int = 1,
     size: int = 10,
 ):
     """List all medications for the current user."""
     # Calculate offset
-    offset = (page - 1) * size
+    skip = (page - 1) * size
 
-    # Get total count
-    total = db.query(Medication).filter(Medication.profile_id == current_user["id"]).count()
-
-    # Get paginated medications
-    medications = (
-        db.query(Medication)
-        .filter(Medication.profile_id == current_user["id"])
-        .offset(offset)
-        .limit(size)
-        .all()
+    # Get total count using SQLAlchemy 2.0 async compatible syntax
+    count_stmt = (
+        select(func.count())
+        .select_from(Medication)
+        .where(Medication.profile_id == current_user["id"])
     )
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar_one()
+
+    # Get paginated medications using SQLAlchemy 2.0 async compatible syntax
+    stmt = (
+        select(Medication)
+        .where(Medication.profile_id == current_user["id"])
+        .offset(skip)
+        .limit(size)
+    )
+    result = await db.execute(stmt)
+    medications = result.scalars().all()
 
     return PaginatedResponse(
         items=[MedicationResponse.from_orm(med) for med in medications],
@@ -98,36 +106,39 @@ async def list_medications(
     )
 
 
+@router.get("/recent", response_model=List[MedicationResponse])
+async def get_recent_medications(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+    limit: int = 5,
+):
+    """Get recent medications for the current user."""
+    stmt = (
+        select(Medication)
+        .where(Medication.profile_id == current_user["id"])
+        .order_by(Medication.scan_date.desc())
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    medications = result.scalars().all()
+
+    return [MedicationResponse.from_orm(med) for med in medications]
+
+
 @router.get("/{medication_id}", response_model=MedicationResponse)
 async def get_medication_by_id(
     medication_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
     """Get a specific medication by ID."""
-    medication = (
-        db.query(Medication)
-        .filter(Medication.id == medication_id, Medication.profile_id == current_user["id"])
-        .first()
+    stmt = select(Medication).where(
+        Medication.id == medication_id, Medication.profile_id == current_user["id"]
     )
+    result = await db.execute(stmt)
+    medication = result.scalar_one_or_none()
 
     if not medication:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Medication not found")
 
     return MedicationResponse.from_orm(medication)
-
-
-@router.get("/recent", response_model=List[MedicationResponse])
-async def get_recent_medications(
-    db: Session = Depends(get_db), current_user: dict = Depends(get_current_user), limit: int = 5
-):
-    """Get recent medications for the current user."""
-    medications = (
-        db.query(Medication)
-        .filter(Medication.profile_id == current_user["id"])
-        .order_by(Medication.scan_date.desc())
-        .limit(limit)
-        .all()
-    )
-
-    return [MedicationResponse.from_orm(med) for med in medications]

@@ -1,11 +1,4 @@
 from .base import BaseSchema, TimestampedSchema
-from .scanned_image import (
-    ScannedImageBase,
-    ScannedImageCreate,
-    ScannedImageUpdate,
-    ScannedImageInDB,
-    ScannedImageResponse,
-)
 from .profile import (
     ProfileBase,
     ProfileCreate,
@@ -25,12 +18,6 @@ from .medication import (
 __all__ = [
     "BaseSchema",
     "TimestampedSchema",
-    # Scanned Image schemas
-    "ScannedImageBase",
-    "ScannedImageCreate",
-    "ScannedImageUpdate",
-    "ScannedImageInDB",
-    "ScannedImageResponse",
     # Profile schemas
     "ProfileBase",
     "ProfileCreate",

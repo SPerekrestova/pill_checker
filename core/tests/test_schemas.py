@@ -13,8 +13,6 @@ from app.schemas import (
     ProfileWithStats,
     MedicationCreate,
     MedicationUpdate,
-    ScannedImageCreate,
-    ScannedImageUpdate,
 )
 
 
@@ -25,50 +23,48 @@ class TestProfileSchemas:
         """Test ProfileCreate schema validation."""
         # Test valid data
         profile = ProfileCreate(**sample_profile_data)
-        assert isinstance(profile.user_id, uuid.UUID)
-        assert profile.user_id == sample_profile_data["user_id"]
-        assert profile.display_name == sample_profile_data["display_name"]
+        assert isinstance(profile.id, uuid.UUID)
+        assert profile.id == sample_profile_data["id"]
+        assert profile.username == sample_profile_data["username"]
         assert profile.bio == sample_profile_data["bio"]
 
         # Test optional fields
         test_uuid = uuid.uuid4()
-        profile = ProfileCreate(user_id=test_uuid)
-        assert profile.user_id == test_uuid
-        assert profile.display_name is None
+        profile = ProfileCreate(id=test_uuid)
+        assert profile.id == test_uuid
+        assert profile.username is None
         assert profile.bio is None
 
         # Test invalid UUID
         with pytest.raises(ValidationError):
-            ProfileCreate(user_id="invalid-uuid")
+            ProfileCreate(id="invalid-uuid")
 
     def test_profile_update_schema(self, sample_profile_data):
         """Test ProfileUpdate schema validation."""
         # Test partial update
-        update_data = {"display_name": "Updated Name"}
+        update_data = {"username": "Updated Name"}
         profile = ProfileUpdate(**update_data)
-        assert profile.display_name == "Updated Name"
+        assert profile.username == "Updated Name"
         assert profile.bio is None
 
         # Test full update
-        profile = ProfileUpdate(**{k: v for k, v in sample_profile_data.items() if k != "user_id"})
-        assert profile.display_name == sample_profile_data["display_name"]
+        profile = ProfileUpdate(**{k: v for k, v in sample_profile_data.items() if k != "id"})
+        assert profile.username == sample_profile_data["username"]
         assert profile.bio == sample_profile_data["bio"]
 
     def test_profile_response_schema(self, sample_profile_data):
         """Test ProfileResponse schema."""
         data = {
-            "id": 1,
-            "user_id": sample_profile_data["user_id"],
-            "display_name": sample_profile_data["display_name"],
+            "id": sample_profile_data["id"],
+            "username": sample_profile_data["username"],
             "bio": sample_profile_data["bio"],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
         }
         response = ProfileResponse(**data)
         assert response.id == data["id"]
-        assert isinstance(response.user_id, uuid.UUID)
-        assert response.user_id == data["user_id"]
-        assert response.display_name == data["display_name"]
+        assert isinstance(response.id, uuid.UUID)
+        assert response.username == data["username"]
         assert response.bio == data["bio"]
         assert isinstance(response.created_at, datetime)
         assert isinstance(response.updated_at, datetime)
@@ -80,17 +76,17 @@ class TestMedicationSchemas:
     def test_medication_create_schema(self, sample_medication_data):
         """Test MedicationCreate schema validation."""
         # Test valid data
-        data = {"profile_id": 1, **sample_medication_data}
+        data = {"profile_id": uuid.uuid4(), **sample_medication_data}
         medication = MedicationCreate(**data)
-        assert medication.profile_id == 1
+        assert medication.profile_id == data["profile_id"]
         assert medication.title == data["title"]
         assert medication.active_ingredients == data["active_ingredients"]
         assert medication.prescription_details == data["prescription_details"]
-        assert str(medication.image_url) == data["image_url"]
+        assert str(medication.scan_url) == data["scan_url"]
 
         # Test validation error for missing required field
         with pytest.raises(ValidationError):
-            MedicationCreate(profile_id=1, title="Test")
+            MedicationCreate(profile_id=uuid.uuid4(), title="Test")
 
     def test_medication_update_schema(self, sample_medication_data):
         """Test MedicationUpdate schema validation."""
@@ -106,41 +102,12 @@ class TestMedicationSchemas:
         assert medication.active_ingredients == sample_medication_data["active_ingredients"]
 
 
-class TestScannedImageSchemas:
-    """Test suite for ScannedImage-related schemas."""
-
-    def test_scanned_image_create_schema(self, sample_scanned_image_data):
-        """Test ScannedImageCreate schema validation."""
-        # Test valid data
-        image = ScannedImageCreate(**sample_scanned_image_data)
-        assert image.image == sample_scanned_image_data["image"]
-        assert image.file_path == sample_scanned_image_data["file_path"]
-
-        # Test required fields
-        with pytest.raises(ValidationError):
-            ScannedImageCreate()
-
-    def test_scanned_image_update_schema(self, sample_scanned_image_data):
-        """Test ScannedImageUpdate schema validation."""
-        # Test partial update
-        update_data = {"file_path": "/new/path/to/image.jpg"}
-        image = ScannedImageUpdate(**update_data)
-        assert image.file_path == update_data["file_path"]
-        assert image.image is None
-
-        # Test full update
-        image = ScannedImageUpdate(**sample_scanned_image_data)
-        assert image.image == sample_scanned_image_data["image"]
-        assert image.file_path == sample_scanned_image_data["file_path"]
-
-
 def test_schema_inheritance():
     """Test schema inheritance and base functionality."""
     # Test ProfileWithStats
     stats_data = {
-        "id": 1,
-        "user_id": "123e4567-e89b-12d3-a456-426614174000",
-        "display_name": "Test User",
+        "id": uuid.uuid4(),
+        "username": "Test User",
         "bio": "Test bio",
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),

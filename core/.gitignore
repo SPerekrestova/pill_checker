@@ -68,6 +68,18 @@ logfile
 .env.production
 *.local
 
+# Environment files with sensitive data
+.env
+.env.*
+.env.app
+.env.supabase-db
+.env.supabase-studio
+.env.kong
+.env.supabase-auth
+.env.supabase-rest
+.env.supabase-storage
+.env.meta
+
 # Temporary files
 *.tmp
 *.temp
@@ -109,3 +121,18 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# Supabase local development volumes
+supabase/volumes/storage/*
+!supabase/volumes/storage/.gitkeep
+supabase/volumes/api/*
+!supabase/volumes/api/.gitkeep
+
+# JWT tokens, keys, and secrets
+*.pem
+*.key
+*.jwk
+
+# Local config with sensitive data
+config.local.yaml
+settings.local.yaml

@@ -42,6 +42,13 @@ async def favicon():
     return FileResponse(static_dir / "img/favicon.svg", media_type="image/svg+xml")
 
 
+# Health check endpoint for Docker
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    return {"status": "healthy"}
+
+
 # Auth routes
 @app.get("/login")
 async def login_page(request: Request):
@@ -89,16 +96,3 @@ app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["aut
 app.include_router(
     medications.router, prefix=f"{settings.API_V1_STR}/medications", tags=["medications"]
 )
-
-if __name__ == "__main__":
-    import uvicorn
-
-    # Development server configuration
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",  # Accessible from outside the container
-        port=8000,
-        reload=True,  # Enable auto-reload
-        workers=1,  # Single worker for development
-        log_level="info",
-    )

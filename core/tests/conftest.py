@@ -9,14 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.config import Settings
 from app.models import Base
-
-# Override environment to use test database
-os.environ["APP_ENV"] = "testing"
-os.environ["TEST_DATABASE_USER"] = "postgres"
-os.environ["TEST_DATABASE_PASSWORD"] = ""
-os.environ["TEST_DATABASE_HOST"] = "localhost"
-os.environ["TEST_DATABASE_PORT"] = "5432"
-os.environ["TEST_DATABASE_NAME"] = "test_pillchecker"
+from app.services.ocr_service import OCRClient, set_ocr_client
 
 # Required for settings validation
 os.environ["SECRET_KEY"] = "test-secret-key"
@@ -75,7 +68,7 @@ def test_db_session(test_db_engine):
 @pytest.fixture
 def sample_profile_data():
     """Sample profile data for testing."""
-    return {"user_id": uuid.uuid4(), "display_name": "Test User", "bio": "Test bio"}
+    return {"id": uuid.uuid4(), "username": "Test User", "bio": "Test bio"}
 
 
 @pytest.fixture
@@ -87,11 +80,26 @@ def sample_medication_data():
         "scanned_text": "Test scan text",
         "dosage": "10mg",
         "prescription_details": {"frequency": "daily"},
-        "image_url": "https://example.com/test_image.jpg",
+        "scan_url": "https://example.com/test_image.jpg",
     }
 
 
-@pytest.fixture
-def sample_scanned_image_data():
-    """Sample scanned medication image data for testing."""
-    return {"image": "test_image.jpg", "file_path": "/path/to/test_image.jpg"}
+class MockOCRClient(OCRClient):
+    """Mock OCR client for testing."""
+
+    def read_text(self, image_data):
+        """Return mock text instead of performing actual OCR."""
+        return "Mocked OCR text for testing"
+
+
+@pytest.fixture(autouse=True)
+def mock_ocr_service():
+    """Mock the OCR service using our custom client."""
+    # Set mock client
+    mock_client = MockOCRClient()
+    set_ocr_client(mock_client)
+
+    yield mock_client
+
+    # Reset to default behavior
+    set_ocr_client(None)

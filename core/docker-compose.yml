@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  # Local Supabase stack
+  supabase-db:
+    image: supabase/postgres:15.1.1.78
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    env_file:
+      - .env
+      - .env.supabase-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  supabase-studio:
+    image: supabase/studio:20250224-d10db0f
+    restart: unless-stopped
+    ports:
+      - "54323:3000"
+    env_file:
+      - .env
+      - .env.supabase-studio
+    depends_on:
+      - supabase-db
+      - kong
+
+  kong:
+    image: kong:2.8.1
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+      - .env.kong
+    volumes:
+      - ./supabase/volumes/api:/var/lib/kong
+    depends_on:
+      - supabase-auth
+      - supabase-rest
+      - supabase-storage
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  supabase-auth:
+    image: supabase/gotrue:v2.158.1
+    restart: unless-stopped
+    env_file:
+      - .env
+      - .env.supabase-auth
+    environment:
+      - API_EXTERNAL_URL=http://localhost:9999
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+
+  supabase-rest:
+    image: postgrest/postgrest:v12.2.0
+    restart: unless-stopped
+    env_file:
+      - .env
+      - .env.supabase-rest
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+
+  supabase-storage:
+    image: supabase/storage-api:v1.11.13
+    restart: unless-stopped
+    env_file:
+      - .env
+      - .env.supabase-storage
+    volumes:
+      - ./supabase/volumes/storage:/var/lib/storage
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+      supabase-rest:
+        condition: service_started
+
+  meta:
+    image: supabase/postgres-meta:v0.83.2
+    restart: unless-stopped
+    env_file:
+      - .env
+      - .env.meta
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+
+  # Email testing
+  mailhog:
+    image: mailhog/mailhog
+    restart: unless-stopped
+    ports:
+      - "8025:8025" # Web UI
+      - "1025:1025" # SMTP server
+    platform: linux/amd64
+
+  # Application service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+      supabase-storage:
+        condition: service_started
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./:/app  # Mount code for development
+    env_file:
+      - .env
+      - .env.app
+    environment:
+      - AUTOMATED_DEPLOYMENT=true
+    command: sh -c './scripts/startup.sh'
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4

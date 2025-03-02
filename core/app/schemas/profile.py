@@ -8,28 +8,27 @@ from .medication import MedicationResponse
 class ProfileBase(TimestampedSchema):
     """Base schema for user profile."""
 
-    display_name: Optional[str] = None
+    username: Optional[str] = None
     bio: Optional[str] = None
 
 
 class ProfileCreate(ProfileBase):
     """Schema for creating a profile."""
 
-    user_id: UUID
+    id: UUID
 
 
 class ProfileUpdate(ProfileBase):
     """Schema for updating a profile."""
 
-    display_name: Optional[str] = None
+    username: Optional[str] = None
     bio: Optional[str] = None
 
 
 class ProfileInDB(ProfileBase):
     """Schema for profile in database."""
 
-    id: int
-    user_id: UUID
+    id: UUID
 
 
 class ProfileResponse(ProfileInDB):

@@ -25,11 +25,19 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = []
 
+    # Security
+    TRUSTED_HOSTS: List[str] = ["localhost", "127.0.0.1"]
+    RATE_LIMIT_PER_SECOND: int = 10
+    RATE_LIMIT_PER_MINUTE: int = 100
+    RATE_LIMIT_PER_HOUR: int = 1000
+
     # Supabase Settings
     SUPABASE_URL: str
     SUPABASE_KEY: str
-    SUPABASE_JWT_SECRET: str
+    SUPABASE_JWT_SECRET: str = None
     SUPABASE_STORAGE_BUCKET: str = "pill-images"
+    SUPABASE_ANON_KEY: str = None
+    SUPABASE_SERVICE_ROLE_KEY: str = None
 
     # Database - The actual values will be set based on APP_ENV
     DATABASE_USER: str = None
@@ -53,17 +61,28 @@ class Settings(BaseSettings):
         except (ValueError, TypeError):
             return 11520
 
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def parse_cors_origins(cls, v):
-        """Parse CORS origins from string to list."""
+    @validator("BACKEND_CORS_ORIGINS", "TRUSTED_HOSTS", pre=True)
+    def parse_string_list(cls, v):
+        """Parse comma-separated string to list."""
         if isinstance(v, str):
             try:
                 import json
 
                 return json.loads(v)
             except json.JSONDecodeError:
-                return [origin.strip() for origin in v.split(",") if origin.strip()]
+                return [item.strip() for item in v.split(",") if item.strip()]
         return v
+
+    @validator("RATE_LIMIT_PER_SECOND", "RATE_LIMIT_PER_MINUTE", "RATE_LIMIT_PER_HOUR", pre=True)
+    def validate_rate_limits(cls, v):
+        """Validate rate limit values."""
+        try:
+            value = int(str(v))
+            if value <= 0:
+                raise ValueError("Rate limit must be positive")
+            return value
+        except (ValueError, TypeError):
+            raise ValueError("Rate limit must be a positive integer")
 
     @validator(
         "DATABASE_USER",
@@ -92,11 +111,19 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY environment variable is not set")
         return v
 
-    @validator("SUPABASE_URL", "SUPABASE_KEY", "SUPABASE_JWT_SECRET", pre=True)
+    @validator("SUPABASE_URL", "SUPABASE_KEY", pre=True)
     def validate_supabase_settings(cls, v, field):
-        """Validate that Supabase settings are set."""
+        """Validate that required Supabase settings are set."""
         if not v:
             raise ValueError(f"{field.name} environment variable is not set")
+        return v
+
+    @validator("SUPABASE_JWT_SECRET", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", pre=True)
+    def validate_optional_supabase_settings(cls, v, field):
+        """Validate optional Supabase settings."""
+        # These are not strictly required for all functionalities
+        if not v:
+            return os.getenv(field.name, None)
         return v
 
     @property

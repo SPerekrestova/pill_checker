@@ -32,7 +32,6 @@ wheels/
 *.egg
 
 # Virtual Environment
-.env
 .venv
 env/
 venv/
@@ -70,12 +69,10 @@ yarn-error.log*
 docs/
 *.md
 !README.md
+!README-LOCAL-DEVELOPMENT.md
 
 # Local development
 .env.local
-.env.development
-.env.test
-.env.production
 *.local
 logfile
 
@@ -107,3 +104,26 @@ Thumbs.db
 ../.pylintrc
 ../.pre-commit-config.yaml
 ../ruff.toml
+
+# JWT tokens, keys, and secrets
+*.pem
+*.key
+*.jwk
+
+# Supabase local development volumes
+supabase/volumes/storage/*
+!supabase/volumes/storage/.gitkeep
+supabase/volumes/api/*
+!supabase/volumes/api/.gitkeep
+
+# IMPORTANT: Do NOT ignore these files for Docker
+# We need them to be included in the Docker image
+!.env
+!.env.app
+!.env.supabase-db
+!.env.supabase-studio
+!.env.kong
+!.env.supabase-auth
+!.env.supabase-rest
+!.env.supabase-storage
+!.env.meta
