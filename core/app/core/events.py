@@ -2,8 +2,8 @@
 
 from typing import Callable
 
-from app.core.database import engine
-from app.core.logging_config import logger
+from core.app.core.database import engine
+from core.app.core.logging_config import logger
 from fastapi import FastAPI, Response, status
 from sqlalchemy import text
 from tenacity import retry, stop_after_attempt, wait_exponential

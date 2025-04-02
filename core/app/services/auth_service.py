@@ -9,9 +9,9 @@ from fastapi import HTTPException, status
 from supabase import create_client, Client
 from supabase.lib.client_options import ClientOptions
 
-from app.core.config import settings
-from app.core.logging_config import logger
-from app.schemas.profile import ProfileUpdate, ProfileInDB
+from core.app.core.config import settings
+from core.app.core.logging_config import logger
+from core.app.schemas.profile import ProfileUpdate, ProfileInDB
 
 
 class AuthService:

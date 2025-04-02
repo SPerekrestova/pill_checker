@@ -5,10 +5,11 @@ import pytest
 from unittest.mock import patch
 
 from PIL import Image
-from app.services.ocr_service import (
+
+from core.app.main import app
+from core.app.services.ocr_service import (
     EasyOCRClient,
 )
-import app.services.ocr_service
 
 # Original client reference
 _original_client = None

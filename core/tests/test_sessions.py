@@ -7,8 +7,8 @@ import pytest
 from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
 
-from app.services.session_service import get_current_user
-from app.core.security import setup_security
+from core.app.services.session_service import get_current_user
+from core.app.core.security import setup_security
 
 # Test data
 TEST_TOKEN = "test_token"

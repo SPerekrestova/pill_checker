@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field, constr
 
-from app.core.logging_config import logger
-from app.services import session_service
-from app.services.auth_service import get_auth_service
+from core.app.core.logging_config import logger
+from core.app.services import session_service
+from core.app.services.auth_service import get_auth_service
 
 router = APIRouter()
 
