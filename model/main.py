@@ -1,91 +1,158 @@
-from typing import Any, Dict, List
+import logging
+import os
+from contextlib import asynccontextmanager
+from functools import lru_cache
+from typing import Dict, List, Optional
 
 import spacy
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from scispacy.abbreviation import AbbreviationDetector  # noqa: F401
-from scispacy.linking import EntityLinker  # noqa: F401
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel, Field
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
-def setup_model():
-    """
-    - **UMLS**: Links to the Unified Medical Language System, levels 0, 1, 2, and 9.
-      This has approximately 3 million concepts.
-    - **MeSH**: Links to the Medical Subject Headings. This contains a smaller set of higher-quality entities,
-      which are used for indexing in PubMed. MeSH contains ~30k entities.
-      **Note**: The MeSH knowledge base (KB) is derived directly from MeSH itself and, as such, uses different
-      unique identifiers than the other KBs.
-    - **RxNorm**: Links to the RxNorm ontology. RxNorm contains ~100k concepts focused on normalized names
-      for clinical drugs. It includes several other drug vocabularies commonly used in pharmacy management
-      and drug interaction, such as First Databank, Micromedex, and the Gold Standard Drug Database.
-    - **GO**: Links to the Gene Ontology. The Gene Ontology contains ~67k concepts focused on the biological
-      functions of genes.
-    - **HPO**: Links to the Human Phenotype Ontology. The Human Phenotype Ontology contains ~16k concepts
-      focused on phenotypic abnormalities encountered in human diseases.
-    """
-
-    print("Loading model...")
-    model = spacy.load("en_ner_bc5cdr_md")
-    model.add_pipe("abbreviation_detector")
-    model.add_pipe(
-        "scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "rxnorm"}
-    )
-
-    print("Model loaded!")
-    return model
-
-
-app = FastAPI()
-root_nlp = setup_model()
+# Environment variables with defaults
+MODEL_NAME = os.getenv("SPACY_MODEL", "en_ner_bc5cdr_md")
+LINKER_NAME = os.getenv("LINKER_NAME", "rxnorm")
 
 
 class TextRequest(BaseModel):
+    text: str = Field(..., description="Medical text to analyze")
+
+
+class EntityDetail(BaseModel):
+    canonical_name: str
+    definition: Optional[str] = None
+    aliases: List[str] = Field(default_factory=list)
+
+
+class Entity(BaseModel):
     text: str
+    umls_entities: List[EntityDetail] = Field(default_factory=list)
 
 
-@app.post("/extract_entities", response_model=Dict[str, List[Dict[str, Any]]])
-def extract_entities(req: TextRequest) -> Dict[str, List[Dict[str, Any]]]:
+class EntityResponse(BaseModel):
+    entities: List[Entity] = Field(default_factory=list)
+
+
+@lru_cache(maxsize=1)
+def get_nlp_model():
     """
-    Process the input text and return recognized entities along with their UMLS details.
+    Load the NLP model with caching to prevent multiple loads.
+    Uses LRU cache to keep the model in memory once loaded.
     """
-    doc = root_nlp(req.text)
-    entities = []
+    try:
+        logger.info(f"Loading model {MODEL_NAME}...")
+        model = spacy.load(MODEL_NAME)
 
-    # Retrieve the linker component to access UMLS mapping.
-    linker = root_nlp.get_pipe("scispacy_linker")
+        # Add abbreviation detector
+        logger.info("Adding abbreviation detector...")
+        try:
+            from scispacy.abbreviation import AbbreviationDetector  # noqa: F401
 
-    for ent in doc.ents:
-        umls_entities = []
-        for umls_ent in ent._.kb_ents:
-            entity_detail = linker.kb.cui_to_entity[umls_ent[0]]
-            print(entity_detail)
-            if entity_detail:
-                umls_entities.append(
-                    {
-                        # "cui": entity_detail.concept_id,
-                        "canonical_name": entity_detail.canonical_name,
-                        "definition": entity_detail.definition,
-                        "aliases": entity_detail.aliases,
-                    }
-                )
+            model.add_pipe("abbreviation_detector")
+        except ImportError:
+            logger.warning("Could not import AbbreviationDetector. Skipping.")
 
-        entities.append(
-            {
-                "text": ent.text,
-                # "label": ent.label_,
-                "umls_entities": umls_entities,
-            }
-        )
+        # Add entity linker
+        logger.info(f"Adding entity linker for {LINKER_NAME}...")
+        try:
+            from scispacy.linking import EntityLinker  # noqa: F401
 
-    return {"entities": entities}
+            model.add_pipe(
+                "scispacy_linker",
+                config={"resolve_abbreviations": True, "linker_name": LINKER_NAME},
+            )
+        except ImportError as e:
+            logger.error(f"Failed to import EntityLinker: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to add entity linker: {e}")
+            raise
+
+        logger.info("Model successfully loaded with all components!")
+        return model
+
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        raise
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Preload the model at startup
+    try:
+        get_nlp_model()
+        logger.info("Model preloaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to preload model: {e}")
+    yield
+
+
+app = FastAPI(
+    lifespan=lifespan,
+    title="Medical NER Service",
+    description="A service for medical named entity recognition and linking",
+)
+
+
+@app.post("/extract_entities", response_model=EntityResponse)
+def extract_entities(req: TextRequest, nlp=Depends(get_nlp_model)) -> EntityResponse:
+    """
+    Process the input text and return recognized entities along with their medical details.
+    """
+    try:
+        doc = nlp(req.text)
+        entities = []
+
+        # Get the linker component
+        try:
+            linker = nlp.get_pipe("scispacy_linker")
+        except KeyError:
+            logger.error("scispacy_linker not found in pipeline")
+            raise HTTPException(status_code=500, detail="Entity linker not available")
+
+        # Process entities
+        for ent in doc.ents:
+            umls_entities = []
+
+            # Get linked entities if available
+            if hasattr(ent._, "kb_ents") and ent._.kb_ents:
+                for umls_ent in ent._.kb_ents:
+                    entity_id = umls_ent[0]
+                    entity_detail = linker.kb.cui_to_entity.get(entity_id)
+
+                    if entity_detail:
+                        umls_entities.append(
+                            EntityDetail(
+                                canonical_name=entity_detail.canonical_name,
+                                definition=getattr(entity_detail, "definition", None),
+                                aliases=getattr(entity_detail, "aliases", []),
+                            )
+                        )
+
+            # Add entity even if no UMLS links found
+            entities.append(Entity(text=ent.text, umls_entities=umls_entities))
+
+        return EntityResponse(entities=entities)
+
+    except Exception as e:
+        logger.error(f"Error processing text: {e}")
+        raise HTTPException(status_code=500, detail=f"Error processing text: {str(e)}")
 
 
 @app.get("/health")
-def health_check() -> Dict[str, str]:
+def health_check(nlp=Depends(get_nlp_model)) -> Dict[str, str]:
     """
     Health check endpoint to verify that the application is running and the model is loaded.
-    If the model is accessible, returns a simple JSON status.
     """
-    if root_nlp is None:
-        raise HTTPException(status_code=503, detail="Model not loaded yet")
-    return {"status": "ok", "message": "Service is healthy"}
+    try:
+        # Test the model with a simple string
+        nlp("test")
+        return {"status": "ok", "message": "Service is healthy, model is loaded"}
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Model not properly loaded: {str(e)}")

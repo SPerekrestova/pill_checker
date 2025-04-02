@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
-from main import app, setup_model
+
+from main import get_nlp_model, app
 
 
 # --- Dummy Classes for Mocking spaCy and scispaCy Behavior --- #
@@ -57,7 +58,7 @@ class DummyNLP:
 @pytest.fixture
 def client():
     # Override the dependency to return the dummy NLP model.
-    app.dependency_overrides[setup_model] = lambda: DummyNLP()
+    app.dependency_overrides[get_nlp_model] = lambda: DummyNLP()
     test_client = TestClient(app)
     yield test_client
     app.dependency_overrides.clear()
