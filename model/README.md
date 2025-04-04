@@ -90,6 +90,30 @@ The application uses the `en_ner_bc5cdr_md` model from [Scispacy](https://github
 
 ---
 
+## Configuration
+
+The service can be configured using environment variables:
+
+### Environment Variables
+
+- `SPACY_MODEL`: SpaCy model to use (default: `en_ner_bc5cdr_md`)
+- `LINKER_NAME`: Entity linker to use (default: `rxnorm`)
+
+### Available Linkers
+
+The following entity linkers are available through the `LINKER_NAME` configuration:
+
+- **UMLS**: (~3M concepts) Links to Unified Medical Language System, levels 0, 1, 2, and 9
+  - Note: The UMLS linker requires significant RAM (~10GB) to operate.
+- **MeSH**: (~30K entities) Medical Subject Headings used for PubMed indexing
+  - Note: Uses different identifiers than other KBs
+- **RxNorm**: (~100K concepts) Clinical drugs ontology with normalized names
+  - Includes: First Databank, Micromedex, Gold Standard Drug Database
+- **GO**: (~67K concepts) Gene Ontology for biological functions of genes
+- **HPO**: (~16K concepts) Human Phenotype Ontology for phenotypic abnormalities
+
+---
+
 ## Future Enhancements
 
 - Make it possible to utilize full model pipeline (UMLS requires 10GB RAM to operate)

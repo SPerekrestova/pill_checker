@@ -3,19 +3,19 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from supabase import Client, create_client
-from app.core.logging_config import logger
+from core.app.core.logging_config import logger
 
-from app.core.config import settings
-from app.core.database import get_db
-from app.models.medication import Medication
-from app.schemas.medication import (
+from core.app.core.config import settings
+from core.app.core.database import get_db
+from core.app.models.medication import Medication
+from core.app.schemas.medication import (
     MedicationResponse,
     MedicationCreate,
     PaginatedResponse,
 )
-from app.services.session_service import get_current_user
+from core.app.services.session_service import get_current_user
 
-from app.services.ocr_service import get_ocr_client
+from core.app.services.ocr_service import get_ocr_client
 
 router = APIRouter()
 

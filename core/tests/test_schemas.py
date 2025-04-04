@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from app.schemas import (
+from core.app.schemas import (
     ProfileCreate,
     ProfileUpdate,
     ProfileResponse,

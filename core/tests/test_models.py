@@ -4,8 +4,8 @@ import uuid
 from unittest.mock import MagicMock
 
 
-from app.models import Profile, Medication
-from app.schemas import (
+from core.app.models import Profile, Medication
+from core.app.schemas import (
     ProfileCreate,
     ProfileResponse,
     MedicationCreate,
