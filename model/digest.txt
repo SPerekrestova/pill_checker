@@ -1,0 +1,1664 @@
+Directory structure:
+└── model/
+    ├── README.md
+    ├── Dockerfile
+    ├── Dockerfile_local
+    ├── docker-compose.yml
+    ├── lightweight_transformer.py
+    ├── main.py
+    ├── pyproject.toml
+    ├── .dockerignore
+    ├── .pre-commit-config.yaml
+    ├── scripts/
+    │   ├── lint.sh
+    │   └── test.sh
+    ├── src/
+    │   └── medical_ner/
+    │       ├── __init__.py
+    │       ├── main.py
+    │       ├── api/
+    │       │   ├── __init__.py
+    │       │   ├── models.py
+    │       │   └── router.py
+    │       ├── core/
+    │       │   ├── __init__.py
+    │       │   ├── config.py
+    │       │   └── logging.py
+    │       └── services/
+    │           ├── __init__.py
+    │           ├── linker.py
+    │           └── nlp.py
+    └── tests/
+        ├── __init__.py
+        ├── conftest.py
+        ├── test_api.py
+        ├── test_linker.py
+        ├── test_nlp.py
+        ├── __pycache__/
+        └── .pytest_cache/
+            ├── README.md
+            ├── CACHEDIR.TAG
+            ├── .gitignore
+            └── v/
+                └── cache/
+                    ├── lastfailed
+                    ├── nodeids
+                    └── stepwise
+
+================================================
+File: README.md
+================================================
+# Medical NER & Linking Service
+
+This service provides named entity recognition (NER) and entity linking for biomedical text using spaCy with a scispaCy model. It exposes a REST API built with FastAPI to process text and return entities along with their medical details.
+
+## Overview
+
+- **Input:** JSON payload with a text field.
+- **Processing:** Loads the `en_ner_bc5cdr_md` scispaCy model and attaches the linker during startup. When a request is received, the model extracts entities and looks up additional details.
+- **Output:** JSON response listing the entities with linking details (e.g., CUI, score, canonical name, and aliases).
+
+## Architecture
+
+- **FastAPI:** Provides the REST API endpoints.
+- **spaCy & scispaCy:** Performs NER and linking. [ScispaCy Repo](https://github.com/allenai/scispacy)
+- **RxNorm:** Linking pipeline which contains ~100k concepts focused on normalized names for clinical drugs. [RxNorm website](https://www.nlm.nih.gov/research/umls/rxnorm/index.html)
+- **Health Check Endpoint:** A dedicated `/health` endpoint is provided to verify the application’s readiness.
+
+## Features
+
+- **/health Endpoint:** Returns a simple JSON indicating the service status.
+- **/extract_entities Endpoint:** Accepts a JSON payload with a text field, performs NER and linking, and returns the extracted entities with additional details.
+
+---
+
+## Docker Deployment
+
+1. Build the Docker image:
+   ```bash
+   docker build -t ner-service .
+   ```
+
+2. Run the container:
+   ```bash
+   docker run -d -p 8000:8000 ner-service
+   ```
+
+3. Test the service:
+   ```bash
+   curl -X POST \
+     -H "Content-Type: application/json" \
+     -d '{"text": "This text contains ibuprofen and paracetamol"}' \
+     http://localhost:8000/extract_entities
+   ```
+
+---
+
+## Usage
+
+### Example: Python Client
+
+```python
+import requests
+
+api_url = "http://localhost:8000/extract_entities"
+text = "The patient took ibuprofen."
+
+response = requests.post(api_url, json={"text": text})
+if response.status_code == 200:
+    print(response.json())
+else:
+    print(f"Error: {response.status_code}")
+```
+
+---
+
+## API response example
+
+````
+{
+  "entities": [
+    {
+      "text": "ibuprofen",
+      "umls_entities": [
+        {
+          "canonical_name": "ibuprofen",
+          "definition": "A non-steroidal anti-inflammatory agent with analgesic, antipyretic, and anti-inflammatory properties",
+          "aliases": []
+        }
+      ]
+    }
+  ]
+}
+````
+
+---
+
+## Model Notes
+
+The application uses the `en_ner_bc5cdr_md` model from [Scispacy](https://github.com/allenai/scispacy) along with the [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html) linker. Make sure that any required model data is accessible at runtime. If not available locally, the model package can be installed via pip (refer to scispaCy’s documentation for details).
+
+---
+
+## Configuration
+
+The service can be configured using environment variables:
+
+### Environment Variables
+
+- `SPACY_MODEL`: SpaCy model to use (default: `en_ner_bc5cdr_md`)
+- `LINKER_NAME`: Entity linker to use (default: `rxnorm`)
+
+### Available Linkers
+
+The following entity linkers are available through the `LINKER_NAME` configuration:
+
+- **UMLS**: (~3M concepts) Links to Unified Medical Language System, levels 0, 1, 2, and 9
+  - Note: The UMLS linker requires significant RAM (~10GB) to operate.
+- **MeSH**: (~30K entities) Medical Subject Headings used for PubMed indexing
+  - Note: Uses different identifiers than other KBs
+- **RxNorm**: (~100K concepts) Clinical drugs ontology with normalized names
+  - Includes: First Databank, Micromedex, Gold Standard Drug Database
+- **GO**: (~67K concepts) Gene Ontology for biological functions of genes
+- **HPO**: (~16K concepts) Human Phenotype Ontology for phenotypic abnormalities
+
+---
+
+## Future Enhancements
+
+- Make it possible to utilize full model pipeline (UMLS requires 10GB RAM to operate)
+- Add support for **brand/trademark recognition**.
+- Improve UMLS concept linking for ambiguous entities.
+- Integrate additional NER models for multilingual support.
+
+
+
+================================================
+File: Dockerfile
+================================================
+FROM python:3.9-slim
+
+COPY requirements.txt /app/requirements.txt
+
+# Install dependencies
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+WORKDIR /app
+COPY main.py /app
+
+EXPOSE 8081
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8081"]
+
+
+
+================================================
+File: Dockerfile_local
+================================================
+# Use a multi-stage build to reduce image size
+FROM python:3.9-slim AS builder
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy and install dependencies
+COPY pyproject.toml .
+COPY src/ ./src/
+RUN pip install --no-cache-dir .
+
+# Final image
+FROM python:3.9-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+WORKDIR /app
+
+# Create non-root user
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
+# Expose API port
+EXPOSE 8081
+
+# Run the FastAPI application with Uvicorn
+CMD ["uvicorn", "medical_ner.main:app", "--host", "0.0.0.0", "--port", "8081", "--log-level", "info"]
+
+
+================================================
+File: docker-compose.yml
+================================================
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SPACY_MODEL=en_ner_bc5cdr_md
+      - LINKER_NAME=rxnorm
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+
+================================================
+File: lightweight_transformer.py
+================================================
+import logging
+import os
+import re
+from functools import lru_cache
+from typing import Dict, List, Optional, Any
+from urllib.parse import quote_plus
+
+import requests
+import torch
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel, Field
+from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# Environment variables
+MODEL_NAME = os.getenv(
+    "MODEL_NAME", "d4data/biomedical-ner-all"
+)  # High-accuracy biomedical NER model
+DEVICE = -1 if not torch.cuda.is_available() else 0  # -1 for CPU, 0 for GPU
+CACHE_SIZE = int(os.getenv("CACHE_SIZE", "1000"))  # Size of LRU cache for drug lookups
+RXNORM_API_URL = os.getenv("RXNORM_API_URL", "https://rxnav.nlm.nih.gov/REST")
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.7"))
+
+# Types for better readability
+RxConcept = Dict[str, Any]
+RxNormCache = Dict[str, RxConcept]
+
+
+class TextRequest(BaseModel):
+    text: str = Field(..., description="Medical text to analyze")
+
+
+class EntityDetail(BaseModel):
+    rxcui: Optional[str] = None
+    name: str
+    drug_class: Optional[str] = None
+    synonyms: List[str] = Field(default_factory=list)
+    brand_names: List[str] = Field(default_factory=list)
+    related_drugs: List[str] = Field(default_factory=list)
+    strength: Optional[str] = None
+    description: Optional[str] = None
+
+
+class Entity(BaseModel):
+    text: str
+    label: str
+    score: float
+    details: Optional[EntityDetail] = None
+
+
+class EntityResponse(BaseModel):
+    entities: List[Entity] = Field(default_factory=list)
+
+
+# Initialize in-memory cache
+drug_cache: RxNormCache = {}
+
+
+@lru_cache(maxsize=1)
+def get_ner_pipeline():
+    """Load the NER pipeline with caching"""
+    try:
+        logger.info(f"Loading NER model: {MODEL_NAME}")
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+        model = AutoModelForTokenClassification.from_pretrained(MODEL_NAME)
+
+        # Create NER pipeline
+        ner = pipeline(
+            "ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple", device=DEVICE
+        )
+        return ner
+    except Exception as e:
+        logger.error(f"Failed to load NER model: {e}")
+        raise RuntimeError(f"Failed to load NER model: {e}")
+
+
+class RxNormClient:
+    """Client for RxNorm API to get drug information"""
+
+    @staticmethod
+    @lru_cache(maxsize=CACHE_SIZE)
+    def search_by_name(drug_name: str) -> Optional[Dict]:
+        """Search for drug by name in RxNorm"""
+        try:
+            url = f"{RXNORM_API_URL}/drugs?name={quote_plus(drug_name)}"
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                if "drugGroup" in data and "conceptGroup" in data["drugGroup"]:
+                    return data
+            return None
+        except Exception as e:
+            logger.warning(f"Error searching RxNorm for {drug_name}: {e}")
+            return None
+
+    @staticmethod
+    @lru_cache(maxsize=CACHE_SIZE)
+    def get_drug_details(rxcui: str) -> Optional[Dict]:
+        """Get detailed information about a drug from RxNorm"""
+        try:
+            url = f"{RXNORM_API_URL}/rxcui/{rxcui}/allrelated"
+            response = requests.get(url)
+            if response.status_code == 200:
+                return response.json()
+            return None
+        except Exception as e:
+            logger.warning(f"Error getting RxNorm details for {rxcui}: {e}")
+            return None
+
+    @staticmethod
+    def extract_entity_details(drug_name: str) -> Optional[EntityDetail]:
+        """Extract all relevant information for a drug from RxNorm"""
+        # Normalize name (lowercase, remove non-alphanumeric)
+        normalized_name = re.sub(r"[^a-zA-Z0-9]", "", drug_name.lower())
+
+        # Check cache first
+        if normalized_name in drug_cache:
+            data = drug_cache[normalized_name]
+            return EntityDetail(**data)
+
+        # Search for the drug
+        search_results = RxNormClient.search_by_name(drug_name)
+        if not search_results:
+            return None
+
+        # Find the best match
+        rxcui = None
+        name = drug_name
+        drug_class = None
+        synonyms = []
+        brand_names = []
+        related_drugs = []
+
+        # Process concept groups
+        for group in search_results["drugGroup"]["conceptGroup"]:
+            if "conceptProperties" in group:
+                for concept in group["conceptProperties"]:
+                    if concept["name"].lower() == drug_name.lower():
+                        rxcui = concept["rxcui"]
+                        name = concept["name"]
+
+                        # Get detailed info if we have an RXCUI
+                        if rxcui:
+                            details = RxNormClient.get_drug_details(rxcui)
+                            if details and "allRelatedGroup" in details:
+                                # Extract information from related groups
+                                for related_group in details["allRelatedGroup"]["conceptGroup"]:
+                                    if "conceptProperties" in related_group:
+                                        for prop in related_group["conceptProperties"]:
+                                            if related_group["tty"] == "SY":  # Synonym
+                                                synonyms.append(prop["name"])
+                                            elif related_group["tty"] == "BN":  # Brand name
+                                                brand_names.append(prop["name"])
+                                            elif related_group["tty"] == "IN":  # Ingredient
+                                                related_drugs.append(prop["name"])
+
+        # Create entity detail
+        if rxcui:
+            details = EntityDetail(
+                rxcui=rxcui,
+                name=name,
+                drug_class=drug_class,
+                synonyms=list(set(synonyms)),
+                brand_names=list(set(brand_names)),
+                related_drugs=list(set(related_drugs)),
+            )
+
+            # Cache result
+            drug_cache[normalized_name] = details.dict(exclude_none=True)
+            return details
+
+        return None
+
+
+app = FastAPI(title="Advanced Medical NER Service")
+
+
+@app.post("/extract_entities", response_model=EntityResponse)
+def extract_entities(req: TextRequest, ner=Depends(get_ner_pipeline)) -> EntityResponse:
+    """
+    Extract medical entities from text using a transformer model
+    and enrich with RxNorm information.
+    """
+    try:
+        # Process text with NER pipeline
+        results = ner(req.text)
+
+        entities = []
+        for result in results:
+            # Skip entities with low confidence
+            if result["score"] < CONFIDENCE_THRESHOLD:
+                continue
+
+            # Extract entity details
+            entity_text = result["word"]
+            entity_label = result["entity"]
+            entity_score = result["score"]
+
+            # Only lookup drug information for drug/chemical entities
+            details = None
+            if any(
+                label in entity_label.lower()
+                for label in ["drug", "chem", "substance", "medication"]
+            ):
+                details = RxNormClient.extract_entity_details(entity_text)
+
+            # Add to results
+            entities.append(
+                Entity(text=entity_text, label=entity_label, score=entity_score, details=details)
+            )
+
+        return EntityResponse(entities=entities)
+
+    except Exception as e:
+        logger.error(f"Error processing text: {e}")
+        raise HTTPException(status_code=500, detail=f"Error processing text: {str(e)}")
+
+
+@app.get("/health")
+def health_check() -> Dict[str, str]:
+    """Health check endpoint"""
+    try:
+        # Check that model can be loaded
+        get_ner_pipeline()
+
+        # Check RxNorm API
+        test_response = requests.get(f"{RXNORM_API_URL}/version")
+        rx_status = "available" if test_response.status_code == 200 else "unavailable"
+
+        return {
+            "status": "ok",
+            "message": "Service is healthy",
+            "rxnorm_api": rx_status,
+            "cached_drugs": len(drug_cache),
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
+
+
+
+================================================
+File: main.py
+================================================
+import logging
+import os
+from contextlib import asynccontextmanager
+from functools import lru_cache
+from typing import Dict, List, Optional
+
+import spacy
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel, Field
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# Environment variables with defaults
+MODEL_NAME = os.getenv("SPACY_MODEL", "en_ner_bc5cdr_md")
+LINKER_NAME = os.getenv("LINKER_NAME", "rxnorm")
+
+
+class TextRequest(BaseModel):
+    text: str = Field(..., description="Medical text to analyze")
+
+
+class EntityDetail(BaseModel):
+    canonical_name: str
+    definition: Optional[str] = None
+    aliases: List[str] = Field(default_factory=list)
+
+
+class Entity(BaseModel):
+    text: str
+    umls_entities: List[EntityDetail] = Field(default_factory=list)
+
+
+class EntityResponse(BaseModel):
+    entities: List[Entity] = Field(default_factory=list)
+
+
+@lru_cache(maxsize=1)
+def get_nlp_model():
+    """
+    Load the NLP model with caching to prevent multiple loads.
+    Uses LRU cache to keep the model in memory once loaded.
+    """
+    try:
+        logger.info(f"Loading model {MODEL_NAME}...")
+        model = spacy.load(MODEL_NAME)
+
+        # Add abbreviation detector
+        logger.info("Adding abbreviation detector...")
+        try:
+            from scispacy.abbreviation import AbbreviationDetector  # noqa: F401
+
+            model.add_pipe("abbreviation_detector")
+        except ImportError:
+            logger.warning("Could not import AbbreviationDetector. Skipping.")
+
+        # Add entity linker
+        logger.info(f"Adding entity linker for {LINKER_NAME}...")
+        try:
+            from scispacy.linking import EntityLinker  # noqa: F401
+
+            model.add_pipe(
+                "scispacy_linker",
+                config={"resolve_abbreviations": True, "linker_name": LINKER_NAME},
+            )
+        except ImportError as e:
+            logger.error(f"Failed to import EntityLinker: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to add entity linker: {e}")
+            raise
+
+        logger.info("Model successfully loaded with all components!")
+        return model
+
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        raise
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Preload the model at startup
+    try:
+        get_nlp_model()
+        logger.info("Model preloaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to preload model: {e}")
+    yield
+
+
+app = FastAPI(
+    lifespan=lifespan,
+    title="Medical NER Service",
+    description="A service for medical named entity recognition and linking",
+)
+
+
+@app.post("/extract_entities", response_model=EntityResponse)
+def extract_entities(req: TextRequest, nlp=Depends(get_nlp_model)) -> EntityResponse:
+    """
+    Process the input text and return recognized entities along with their medical details.
+    """
+    try:
+        doc = nlp(req.text)
+        entities = []
+
+        # Get the linker component
+        try:
+            linker = nlp.get_pipe("scispacy_linker")
+        except KeyError:
+            logger.error("scispacy_linker not found in pipeline")
+            raise HTTPException(status_code=500, detail="Entity linker not available")
+
+        # Process entities
+        for ent in doc.ents:
+            umls_entities = []
+
+            # Get linked entities if available
+            if hasattr(ent._, "kb_ents") and ent._.kb_ents:
+                for umls_ent in ent._.kb_ents:
+                    entity_id = umls_ent[0]
+                    entity_detail = linker.kb.cui_to_entity.get(entity_id)
+
+                    if entity_detail:
+                        umls_entities.append(
+                            EntityDetail(
+                                canonical_name=entity_detail.canonical_name,
+                                definition=getattr(entity_detail, "definition", None),
+                                aliases=getattr(entity_detail, "aliases", []),
+                            )
+                        )
+
+            # Add entity even if no UMLS links found
+            entities.append(Entity(text=ent.text, umls_entities=umls_entities))
+
+        return EntityResponse(entities=entities)
+
+    except Exception as e:
+        logger.error(f"Error processing text: {e}")
+        raise HTTPException(status_code=500, detail=f"Error processing text: {str(e)}")
+
+
+@app.get("/health")
+def health_check(nlp=Depends(get_nlp_model)) -> Dict[str, str]:
+    """
+    Health check endpoint to verify that the application is running and the model is loaded.
+    """
+    try:
+        # Test the model with a simple string
+        nlp("test")
+        return {"status": "ok", "message": "Service is healthy, model is loaded"}
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Model not properly loaded: {str(e)}")
+
+
+
+================================================
+File: pyproject.toml
+================================================
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medical_ner"
+version = "0.1.0"
+description = "Medical NER & Linking Service"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.112.2",
+    "uvicorn>=0.34.0",
+    "spacy>=3.7.4",
+    "scispacy>=0.5.4",
+    "pydantic>=2.10.5",
+    "httpx>=0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.1.0",
+    "isort>=5.12.0",
+    "ruff>=0.0.254",
+    "pre-commit>=3.2.0",
+]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+select = ["E", "F", "B", "I"]
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest]
+testpaths = ["tests"]
+python_files = "test_*.py"
+
+
+================================================
+File: .dockerignore
+================================================
+# Bytecode and cache files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Virtual environment directories
+venv/
+.venv/
+
+# Git version control files and directories
+.git
+.gitignore
+.github/
+
+
+# Test directories (adjust these names as needed)
+tests/
+test/
+
+# Environment variable files
+.env
+*.env
+
+# Editor and IDE settings
+.vscode/
+.idea/
+.run/
+
+# macOS specific files
+.DS_Store
+
+# Log files
+*.log
+
+.pylintrc
+.pre-commit-config.yaml
+ruff.toml
+docker-compose.yml
+README.md
+
+
+
+================================================
+File: .pre-commit-config.yaml
+================================================
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-toml
+    -   id: check-added-large-files
+
+-   repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+    -   id: isort
+
+-   repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+    -   id: black
+
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.254
+    hooks:
+    -   id: ruff
+
+
+================================================
+File: scripts/lint.sh
+================================================
+
+
+
+================================================
+File: scripts/test.sh
+================================================
+
+
+
+================================================
+File: src/medical_ner/__init__.py
+================================================
+
+
+
+================================================
+File: src/medical_ner/main.py
+================================================
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from medical_ner.core.logging import configure_logging
+from .api.router import router
+from .core.config import settings
+from .services.nlp import get_nlp_model
+
+# Configure logging before anything else
+configure_logging()
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Preload the model at startup
+    try:
+        get_nlp_model()
+        logger.info("Model preloaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to preload model: {e}")
+    yield
+
+def create_application() -> FastAPI:
+    """Create and configure the FastAPI application"""
+    app = FastAPI(
+        lifespan=lifespan,
+        title="Medical NER Service",
+        description="A service for medical named entity recognition and linking",
+        version="0.1.0",
+        debug=settings.DEBUG,
+    )
+
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Specify allowed origins in production
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Add routers
+    app.include_router(router, prefix=settings.API_PREFIX)
+
+    return app
+
+app = create_application()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "medical_ner.main:app",
+        host="0.0.0.0",
+        port=8081,
+        reload=settings.DEBUG
+    )
+
+
+================================================
+File: src/medical_ner/api/__init__.py
+================================================
+
+
+
+================================================
+File: src/medical_ner/api/models.py
+================================================
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
+
+class TextRequest(BaseModel):
+    text: str = Field(..., description="Medical text to analyze")
+
+class EntityDetail(BaseModel):
+    canonical_name: str
+    definition: Optional[str] = None
+    aliases: List[str] = Field(default_factory=list)
+
+class Entity(BaseModel):
+    text: str
+    umls_entities: List[EntityDetail] = Field(default_factory=list)
+
+class EntityResponse(BaseModel):
+    entities: List[Entity] = Field(default_factory=list)
+
+class HealthResponse(BaseModel):
+    status: str
+    message: str
+
+
+================================================
+File: src/medical_ner/api/router.py
+================================================
+from fastapi import APIRouter, Depends, HTTPException
+from typing import Dict
+
+from ..core.logging import get_logger
+from ..services.linker import EntityLinker
+from ..services.nlp import get_nlp_model
+from .models import TextRequest, EntityResponse, HealthResponse, Entity, EntityDetail
+
+router = APIRouter()
+logger = get_logger(__name__)
+
+@router.post("/extract_entities", response_model=EntityResponse)
+def extract_entities(req: TextRequest, nlp=Depends(get_nlp_model)) -> EntityResponse:
+    """
+    Process the input text and return recognized entities along with their medical details.
+    """
+    try:
+        doc = nlp(req.text)
+
+        # Use the entity linker service
+        linker_service = EntityLinker(doc)
+        entities = linker_service.extract_entities()
+
+        return EntityResponse(entities=entities)
+
+    except Exception as e:
+        logger.error(f"Error processing text: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error processing text: {str(e)}")
+
+@router.get("/health", response_model=HealthResponse)
+def health_check(nlp=Depends(get_nlp_model)) -> Dict[str, str]:
+    """
+    Health check endpoint to verify that the application is running and the model is loaded.
+    """
+    try:
+        # Test the model with a simple string
+        nlp("test")
+        return HealthResponse(
+            status="ok",
+            message="Service is healthy, model is loaded"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Model not properly loaded: {str(e)}")
+
+
+================================================
+File: src/medical_ner/core/__init__.py
+================================================
+
+
+
+================================================
+File: src/medical_ner/core/config.py
+================================================
+from pydantic import BaseSettings, Field
+
+
+class Settings(BaseSettings):
+    """Application settings"""
+    # Model settings
+    SPACY_MODEL: str = Field(default="en_ner_bc5cdr_md", env="SPACY_MODEL")
+    LINKER_NAME: str = Field(default="rxnorm", env="LINKER_NAME")
+
+    # API settings
+    API_PREFIX: str = Field(default="/api", env="API_PREFIX")
+    DEBUG: bool = Field(default=False, env="DEBUG")
+
+    # Logging
+    LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
+
+    # Entity linking
+    ENTITY_SCORE_THRESHOLD: float = Field(default=0.7, env="ENTITY_SCORE_THRESHOLD")
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+
+settings = Settings()
+
+
+================================================
+File: src/medical_ner/core/logging.py
+================================================
+"""
+Logging configuration for the application.
+This module sets up logging with appropriate formatters and handlers.
+"""
+
+import logging
+import sys
+
+from ..core.config import settings
+
+
+def configure_logging() -> None:
+    """
+    Configure logging for the application based on settings.
+
+    Creates console handlers with appropriate formatting and sets the log level
+    based on configuration.
+    """
+    # Get log level from settings
+    log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+
+    # Create formatters
+    simple_formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    detailed_formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s"
+    )
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+
+    # Clear existing handlers if any
+    if root_logger.handlers:
+        for handler in root_logger.handlers:
+            root_logger.removeHandler(handler)
+
+    # Create console handler for info and below
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+    console_handler.setFormatter(simple_formatter)
+    console_handler.addFilter(lambda record: record.levelno <= logging.INFO)
+    root_logger.addHandler(console_handler)
+
+    # Create error console handler for warnings and above
+    error_console_handler = logging.StreamHandler(sys.stderr)
+    error_console_handler.setLevel(logging.WARNING)
+    error_console_handler.setFormatter(detailed_formatter)
+    root_logger.addHandler(error_console_handler)
+
+    # Reduce verbosity of some loggers
+    for logger_name in ["uvicorn", "uvicorn.access"]:
+        mod_logger = logging.getLogger(logger_name)
+        mod_logger.setLevel(max(log_level, logging.WARNING))
+
+
+def get_logger(name: str) -> logging.Logger:
+    """
+    Get a logger with the given name.
+
+    Args:
+        name: The name for the logger
+
+    Returns:
+        logging.Logger: Configured logger instance
+    """
+    return logging.getLogger(name)
+
+
+================================================
+File: src/medical_ner/services/__init__.py
+================================================
+
+
+
+================================================
+File: src/medical_ner/services/linker.py
+================================================
+"""
+Entity linking service for medical NER.
+This module handles the extraction of additional information about entities
+from medical knowledge bases like RxNorm.
+"""
+
+from typing import List
+
+from ..api.models import Entity, EntityDetail
+from ..core.config import settings
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
+
+
+class EntityLinker:
+    """Service for linking extracted entities to medical knowledge bases"""
+
+    def __init__(self, nlp_doc):
+        """
+        Initialize the linker with a spaCy document
+
+        Args:
+            nlp_doc: A processed spaCy document containing entities
+        """
+        self.doc = nlp_doc
+        try:
+            self.linker = nlp_doc._.get_pipe("scispacy_linker")
+        except (KeyError, AttributeError) as e:
+            logger.error(f"scispacy_linker not found in pipeline: {e}")
+            self.linker = None
+
+    def extract_entities(self) -> List[Entity]:
+        """
+        Extract entities from the document and enrich them with linked knowledge
+
+        Returns:
+            List[Entity]: A list of extracted entities with their details
+        """
+        entities = []
+
+        for ent in self.doc.ents:
+            umls_entities = self._get_linked_entities(ent)
+            entities.append(Entity(text=ent.text, umls_entities=umls_entities))
+
+        return entities
+
+    def _get_linked_entities(self, ent) -> List[EntityDetail]:
+        """
+        Get linked knowledge base entities for a spaCy entity
+
+        Args:
+            ent: A spaCy entity
+
+        Returns:
+            List[EntityDetail]: A list of linked entity details
+        """
+        umls_entities = []
+
+        # Skip if linker is not available
+        if self.linker is None:
+            return umls_entities
+
+        # Get linked entities if available
+        if hasattr(ent._, "kb_ents") and ent._.kb_ents:
+            for umls_ent in ent._.kb_ents:
+                entity_id = umls_ent[0]
+                score = umls_ent[1]
+
+                # Skip low confidence matches
+                if score < settings.ENTITY_SCORE_THRESHOLD:
+                    continue
+
+                entity_detail = self.linker.kb.cui_to_entity.get(entity_id)
+
+                if entity_detail:
+                    umls_entities.append(
+                        EntityDetail(
+                            canonical_name=entity_detail.canonical_name,
+                            definition=getattr(entity_detail, "definition", None),
+                            aliases=getattr(entity_detail, "aliases", []),
+                        )
+                    )
+
+        return umls_entities
+
+
+================================================
+File: src/medical_ner/services/nlp.py
+================================================
+from functools import lru_cache
+
+import spacy
+from spacy.language import Language
+
+from ..core.config import settings
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
+
+
+@lru_cache(maxsize=1)
+def get_nlp_model() -> Language:
+    """
+    Load the NLP model with caching to prevent multiple loads.
+    Uses LRU cache to keep the model in memory once loaded.
+
+    Returns:
+        Language: Loaded spaCy model with all necessary components
+
+    Raises:
+        RuntimeError: If the model fails to load or a component fails to load
+    """
+    try:
+        logger.info(f"Loading model {settings.SPACY_MODEL}...")
+        model = spacy.load(settings.SPACY_MODEL)
+
+        # Add abbreviation detector
+        logger.info("Adding abbreviation detector...")
+        try:
+            from scispacy.abbreviation import AbbreviationDetector
+            model.add_pipe("abbreviation_detector")
+        except ImportError:
+            logger.warning("Could not import AbbreviationDetector. Skipping.")
+
+        # Add entity linker
+        logger.info(f"Adding entity linker for {settings.LINKER_NAME}...")
+        try:
+            from scispacy.linking import EntityLinker
+            model.add_pipe(
+                "scispacy_linker",
+                config={"resolve_abbreviations": True, "linker_name": settings.LINKER_NAME},
+            )
+        except ImportError as e:
+            logger.error(f"Failed to import EntityLinker: {e}")
+            raise RuntimeError(f"Failed to import EntityLinker: {e}")
+        except Exception as e:
+            logger.error(f"Failed to add entity linker: {e}")
+            raise RuntimeError(f"Failed to add entity linker: {e}")
+
+        logger.info("Model successfully loaded with all components!")
+        return model
+
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        raise RuntimeError(f"Error loading model: {e}")
+
+
+================================================
+File: tests/__init__.py
+================================================
+
+
+
+================================================
+File: tests/conftest.py
+================================================
+import pytest
+from fastapi.testclient import TestClient
+
+from medical_ner.main import app
+from medical_ner.services.nlp import get_nlp_model
+
+# Dummy NLP model for testing
+class DummyNLP:
+    def __call__(self, text):
+        return DummyDoc(text)
+
+    @staticmethod
+    def get_pipe(name):
+        if name == "scispacy_linker":
+            return DummyLinker()
+        raise KeyError(f"Pipeline component {name} not found")
+
+class DummyDoc:
+    def __init__(self, text):
+        self.ents = [DummyEntity(text)]
+
+class DummyEntity:
+    def __init__(self, text):
+        self.text = text
+        self._ = DummyEntityAttributes()
+
+class DummyEntityAttributes:
+    @property
+    def kb_ents(self):
+        return [("C0000001", 0.95)]
+
+class DummyLinker:
+    @property
+    def kb(self):
+        return DummyKB()
+
+class DummyKB:
+    @property
+    def cui_to_entity(self):
+        return {"C0000001": DummyEntityDetail()}
+
+class DummyEntityDetail:
+    @property
+    def canonical_name(self):
+        return "Test Entity"
+
+    @property
+    def definition(self):
+        return "A test entity for unit testing."
+
+    @property
+    def aliases(self):
+        return ["Test Alias 1", "Test Alias 2"]
+
+@pytest.fixture
+def client():
+    """Create a test client with mocked NLP model"""
+    app.dependency_overrides[get_nlp_model] = lambda: DummyNLP()
+    test_client = TestClient(app)
+    yield test_client
+    app.dependency_overrides.clear()
+
+
+================================================
+File: tests/test_api.py
+================================================
+from unittest.mock import patch
+
+def test_health_endpoint(client):
+    """Test the health endpoint returns 200 OK"""
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert "model is loaded" in data["message"]
+
+def test_extract_entities(client):
+    """Test entity extraction with mock data"""
+    response = client.post("/api/extract_entities", json={"text": "Test text"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "entities" in data
+    assert len(data["entities"]) > 0
+    entity = data["entities"][0]
+    assert entity["text"] == "Test text"
+    assert len(entity["umls_entities"]) > 0
+    umls_entity = entity["umls_entities"][0]
+    assert umls_entity["canonical_name"] == "Test Entity"
+
+def test_extract_entities_error_handling(client):
+    """Test error handling during entity extraction"""
+    with patch("medical_ner.services.nlp.get_nlp_model", side_effect=Exception("Test exception")):
+        response = client.post("/api/extract_entities", json={"text": "Test text"})
+        assert response.status_code == 500
+        assert "Error processing text" in response.json()["detail"]
+
+
+================================================
+File: tests/test_linker.py
+================================================
+"""
+Tests for the entity linking service.
+"""
+
+from unittest.mock import MagicMock, patch
+
+from medical_ner.services.linker import EntityLinker
+
+
+class MockEntity:
+    """Mock entity for testing"""
+
+    def __init__(self, text, kb_ents=None):
+        self.text = text
+        self._ = MagicMock()
+        self._.kb_ents = kb_ents or []
+
+
+class MockKnowledgeBase:
+    """Mock knowledge base for testing"""
+
+    def __init__(self):
+        self.cui_to_entity = {
+            "C0021400": type("EntityDetail", (), {
+                "canonical_name": "Ibuprofen",
+                "definition": "A non-steroidal anti-inflammatory agent with analgesic properties",
+                "aliases": ["Advil", "Motrin"]
+            }),
+            "C0000970": type("EntityDetail", (), {
+                "canonical_name": "Acetaminophen",
+                "definition": "A non-opiate analgesic with antipyretic properties",
+                "aliases": ["Paracetamol", "Tylenol"]
+            })
+        }
+
+
+class MockLinker:
+    """Mock entity linker for testing"""
+
+    def __init__(self):
+        self.kb = MockKnowledgeBase()
+
+
+def test_entity_linker_initialization():
+    """Test EntityLinker initialization"""
+    # Create mock document
+    doc = MagicMock()
+    doc.ents = []
+
+    # Add mock linker to document
+    mock_linker = MockLinker()
+    doc._.get_pipe.return_value = mock_linker
+
+    # Initialize EntityLinker
+    linker = EntityLinker(doc)
+
+    assert linker.doc == doc
+    assert linker.linker == mock_linker
+
+
+def test_entity_linker_initialization_no_linker():
+    """Test EntityLinker initialization when linker is not available"""
+    # Create mock document
+    doc = MagicMock()
+    doc.ents = []
+
+    # Make get_pipe raise an error
+    doc._.get_pipe.side_effect = KeyError("scispacy_linker not found")
+
+    # Initialize EntityLinker - should not raise an error
+    linker = EntityLinker(doc)
+
+    assert linker.doc == doc
+    assert linker.linker is None
+
+
+def test_extract_entities_empty():
+    """Test extraction with no entities"""
+    # Create mock document with no entities
+    doc = MagicMock()
+    doc.ents = []
+
+    # Add mock linker to document
+    mock_linker = MockLinker()
+    doc._.get_pipe.return_value = mock_linker
+
+    # Extract entities
+    linker = EntityLinker(doc)
+    entities = linker.extract_entities()
+
+    assert len(entities) == 0
+
+
+def test_extract_entities():
+    """Test extraction with entities"""
+    # Create mock document with entities
+    doc = MagicMock()
+
+    # Create entities with linked knowledge
+    entity1 = MockEntity("ibuprofen", kb_ents=[("C0021400", 0.98)])
+    entity2 = MockEntity("acetaminophen", kb_ents=[("C0000970", 0.95)])
+    doc.ents = [entity1, entity2]
+
+    # Add mock linker to document
+    mock_linker = MockLinker()
+    doc._.get_pipe.return_value = mock_linker
+
+    # Extract entities
+    linker = EntityLinker(doc)
+    entities = linker.extract_entities()
+
+    assert len(entities) == 2
+
+    # Check first entity
+    assert entities[0].text == "ibuprofen"
+    assert len(entities[0].umls_entities) == 1
+    assert entities[0].umls_entities[0].canonical_name == "Ibuprofen"
+    assert "Advil" in entities[0].umls_entities[0].aliases
+
+    # Check second entity
+    assert entities[1].text == "acetaminophen"
+    assert entities[1].umls_entities[0].canonical_name == "Acetaminophen"
+
+
+def test_extract_entities_low_confidence():
+    """Test extraction with low confidence entities that should be filtered"""
+    # Create mock document with entities
+    doc = MagicMock()
+
+    # Create an entity with low confidence match
+    entity = MockEntity("ibuprofen", kb_ents=[("C0021400", 0.3)])  # Low confidence
+    doc.ents = [entity]
+
+    # Add mock linker to document
+    mock_linker = MockLinker()
+    doc._.get_pipe.return_value = mock_linker
+
+    # Set low threshold for testing
+    with patch("medical_ner.core.config.settings.ENTITY_SCORE_THRESHOLD", 0.8):
+        # Extract entities
+        linker = EntityLinker(doc)
+        entities = linker.extract_entities()
+
+        # Entity should be present but with no linked entities due to low confidence
+        assert len(entities) == 1
+        assert entities[0].text == "ibuprofen"
+        assert len(entities[0].umls_entities) == 0
+
+
+def test_extract_entities_no_linker():
+    """Test extraction when linker is not available"""
+    # Create mock document with entities
+    doc = MagicMock()
+    entity = MockEntity("ibuprofen", kb_ents=[("C0021400", 0.98)])
+    doc.ents = [entity]
+
+    # Make get_pipe raise an error
+    doc._.get_pipe.side_effect = KeyError("scispacy_linker not found")
+
+    # Extract entities
+    linker = EntityLinker(doc)
+    entities = linker.extract_entities()
+
+    # Entity should be present but with no linked entities
+    assert len(entities) == 1
+    assert entities[0].text == "ibuprofen"
+    assert len(entities[0].umls_entities) == 0
+
+
+================================================
+File: tests/test_nlp.py
+================================================
+"""
+Tests for the NLP service functionality.
+"""
+
+import pytest
+from unittest.mock import patch, MagicMock
+
+from medical_ner.services.nlp import get_nlp_model
+
+
+def test_nlp_model_loading():
+    """Test that the NLP model loads successfully"""
+    # This will use the real model, so it's slow but valuable
+    # You may want to skip this in CI with a decorator if it's too slow
+    model = get_nlp_model()
+    assert model is not None
+    assert hasattr(model, "pipe_names")
+
+    # Verify that required pipes are present
+    assert "ner" in model.pipe_names
+    assert "scispacy_linker" in model.pipe_names
+
+
+@patch("spacy.load")
+def test_nlp_model_loading_failure(mock_load):
+    """Test error handling when model loading fails"""
+    # Mock the spacy.load function to raise an exception
+    mock_load.side_effect = OSError("Model not found")
+
+    # The function should raise a RuntimeError with a helpful message
+    with pytest.raises(RuntimeError) as excinfo:
+        get_nlp_model.cache_clear()  # Clear the LRU cache
+        get_nlp_model()
+
+    assert "Error loading model" in str(excinfo.value)
+
+
+@patch("spacy.load")
+def test_nlp_model_caching(mock_load):
+    """Test that the model is properly cached"""
+    # Create a mock model
+    mock_model = MagicMock()
+    mock_model.pipe_names = ["ner"]
+    mock_model.add_pipe.return_value = None
+    mock_load.return_value = mock_model
+
+    # Clear the cache and load the model twice
+    get_nlp_model.cache_clear()
+    model1 = get_nlp_model()
+    model2 = get_nlp_model()
+
+    # Verify that spacy.load was only called once
+    assert mock_load.call_count == 1
+    assert model1 is model2  # Same instance should be returned
+
+
+def test_nlp_entity_recognition():
+    """Test basic entity recognition functionality"""
+    model = get_nlp_model()
+    text = "The patient was prescribed ibuprofen for pain relief."
+    doc = model(text)
+
+    # Check that entities were found
+    assert len(doc.ents) > 0
+
+    # Check that at least one entity is a medication
+    medications = [ent for ent in doc.ents if "ibuprofen" in ent.text.lower()]
+    assert len(medications) > 0
+
+
+def test_nlp_abbreviation_detection():
+    """Test that abbreviation detection is working"""
+    # Skip if the abbreviation detector is not available
+    model = get_nlp_model()
+    if "abbreviation_detector" not in model.pipe_names:
+        pytest.skip("Abbreviation detector not available")
+
+    # Test with a text containing an abbreviation
+    text = "The patient has chronic obstructive pulmonary disease (COPD)."
+    doc = model(text)
+
+    # Check that abbreviations were detected
+    abbreviations = []
+    if hasattr(doc._, "abbreviations"):
+        abbreviations = doc._.abbreviations
+
+    assert len(abbreviations) > 0
+    assert any(abbr._.long_form.text.lower() == "chronic obstructive pulmonary disease"
+               for abbr in abbreviations)
+
+
+
+================================================
+File: tests/.pytest_cache/README.md
+================================================
+# pytest cache directory #
+
+This directory contains data from the pytest's cache plugin,
+which provides the `--lf` and `--ff` options, as well as the `cache` fixture.
+
+**Do not** commit this to version control.
+
+See [the docs](https://docs.pytest.org/en/stable/how-to/cache.html) for more information.
+
+
+
+================================================
+File: tests/.pytest_cache/CACHEDIR.TAG
+================================================
+Signature: 8a477f597d28d172789f06886806bc55
+# This file is a cache directory tag created by pytest.
+# For information about cache directory tags, see:
+#	https://bford.info/cachedir/spec.html
+
+
+
+================================================
+File: tests/.pytest_cache/.gitignore
+================================================
+# Created by pytest automatically.
+*
+
+
+
+================================================
+File: tests/.pytest_cache/v/cache/lastfailed
+================================================
+{
+  "test_dosage_extractor.py": true,
+  "test_dosage_extraction.py": true,
+  "test_main.py::test_extract_entities_error_handling": true,
+  "test_main.py::test_health_check_error_handling": true
+}
+
+
+================================================
+File: tests/.pytest_cache/v/cache/nodeids
+================================================
+[
+  "test_main.py::test_extract_entities",
+  "test_main.py::test_extract_entities_error_handling",
+  "test_main.py::test_health_check_error_handling",
+  "test_main.py::test_model_loading"
+]
+
+
+================================================
+File: tests/.pytest_cache/v/cache/stepwise
+================================================
+[]

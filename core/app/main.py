@@ -59,7 +59,9 @@ async def login_page(request: Request):
 @app.get("/register")
 async def register_page(request: Request):
     """Render the registration page."""
-    return templates.TemplateResponse("register.html", {"request": request, "user": None})
+    return templates.TemplateResponse(
+        "register.html", {"request": request, "user": None}
+    )
 
 
 @app.get("/dashboard")
@@ -94,5 +96,7 @@ async def medication_detail_page(request: Request, medication_id: int):
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 
 app.include_router(
-    medications.router, prefix=f"{settings.API_V1_STR}/medications", tags=["medications"]
+    medications.router,
+    prefix=f"{settings.API_V1_STR}/medications",
+    tags=["medications"],
 )

@@ -3,7 +3,7 @@
 from typing import Generator
 
 from sqlalchemy import NullPool, create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from .config import settings
 from .logging_config import logger

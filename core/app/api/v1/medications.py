@@ -1,21 +1,21 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlalchemy import select, func
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from supabase import Client, create_client
-from core.app.core.logging_config import logger
 
 from core.app.core.config import settings
 from core.app.core.database import get_db
+from core.app.core.logging_config import logger
 from core.app.models.medication import Medication
 from core.app.schemas.medication import (
-    MedicationResponse,
     MedicationCreate,
+    MedicationResponse,
     PaginatedResponse,
 )
-from core.app.services.session_service import get_current_user
-
 from core.app.services.ocr_service import get_ocr_client
+from core.app.services.session_service import get_current_user
 
 router = APIRouter()
 
@@ -140,6 +140,8 @@ def get_medication_by_id(
     medication = result.scalar_one_or_none()
 
     if not medication:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Medication not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Medication not found"
+        )
 
     return MedicationResponse.model_validate(medication)

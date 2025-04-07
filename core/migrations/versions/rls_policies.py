@@ -8,8 +8,8 @@ Create Date: 2025-03-01 22:00:00.000000
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "add_rls_policies"
@@ -157,13 +157,19 @@ def downgrade() -> None:
     op.execute("DROP POLICY IF EXISTS insert_own_medications ON medications;")
     op.execute("DROP POLICY IF EXISTS update_own_medications ON medications;")
     op.execute("DROP POLICY IF EXISTS delete_own_medications ON medications;")
-    op.execute("DROP POLICY IF EXISTS supabase_admin_access_medications ON medications;")
+    op.execute(
+        "DROP POLICY IF EXISTS supabase_admin_access_medications ON medications;"
+    )
     op.execute("DROP POLICY IF EXISTS service_role_access_medications ON medications;")
 
     # Revoke permissions
     op.execute("REVOKE SELECT, INSERT, UPDATE, DELETE ON profiles FROM authenticated;")
-    op.execute("REVOKE SELECT, INSERT, UPDATE, DELETE ON medications FROM authenticated;")
-    op.execute("REVOKE USAGE, SELECT ON SEQUENCE medications_id_seq FROM authenticated;")
+    op.execute(
+        "REVOKE SELECT, INSERT, UPDATE, DELETE ON medications FROM authenticated;"
+    )
+    op.execute(
+        "REVOKE USAGE, SELECT ON SEQUENCE medications_id_seq FROM authenticated;"
+    )
 
     # Disable Row Level Security
     op.execute("ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;")

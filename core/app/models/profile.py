@@ -1,8 +1,9 @@
-from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import Column, Text, Index, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, Mapped
 import uuid
+from typing import TYPE_CHECKING, List, Optional
+
+from sqlalchemy import CheckConstraint, Column, Index, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, relationship
 
 from .base import Base
 

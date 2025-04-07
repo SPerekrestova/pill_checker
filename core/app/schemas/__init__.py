@@ -1,18 +1,18 @@
 from .base import BaseSchema, TimestampedSchema
-from .profile import (
-    ProfileBase,
-    ProfileCreate,
-    ProfileUpdate,
-    ProfileInDB,
-    ProfileResponse,
-    ProfileWithStats,
-)
 from .medication import (
     MedicationBase,
     MedicationCreate,
-    MedicationUpdate,
     MedicationInDB,
     MedicationResponse,
+    MedicationUpdate,
+)
+from .profile import (
+    ProfileBase,
+    ProfileCreate,
+    ProfileInDB,
+    ProfileResponse,
+    ProfileUpdate,
+    ProfileWithStats,
 )
 
 __all__ = [

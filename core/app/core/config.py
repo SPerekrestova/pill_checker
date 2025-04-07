@@ -73,7 +73,12 @@ class Settings(BaseSettings):
                 return [item.strip() for item in v.split(",") if item.strip()]
         return v
 
-    @validator("RATE_LIMIT_PER_SECOND", "RATE_LIMIT_PER_MINUTE", "RATE_LIMIT_PER_HOUR", pre=True)
+    @validator(
+        "RATE_LIMIT_PER_SECOND",
+        "RATE_LIMIT_PER_MINUTE",
+        "RATE_LIMIT_PER_HOUR",
+        pre=True,
+    )
     def validate_rate_limits(cls, v):
         """Validate rate limit values."""
         try:
@@ -98,7 +103,12 @@ class Settings(BaseSettings):
             raise ValueError(f"{field.name} environment variable is not set")
         return v
 
-    @validator("SUPABASE_JWT_SECRET", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", pre=True)
+    @validator(
+        "SUPABASE_JWT_SECRET",
+        "SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        pre=True,
+    )
     def validate_optional_supabase_settings(cls, v, field):
         """Validate optional Supabase settings."""
         # These are not strictly required for all functionalities

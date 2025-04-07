@@ -1,21 +1,20 @@
 """Unified Supabase service for authentication and profile management."""
 
-from functools import lru_cache
-from typing import Optional, Tuple, Dict, Any
-from uuid import UUID
 from datetime import datetime
+from functools import lru_cache
+from typing import Any, Dict, Optional, Tuple
+from uuid import UUID
 
 from fastapi import HTTPException, status
-from supabase import create_client, Client
+from supabase import Client, create_client
 from supabase.lib.client_options import ClientOptions
 
 from core.app.core.config import settings
 from core.app.core.logging_config import logger
-from core.app.schemas.profile import ProfileUpdate, ProfileInDB
+from core.app.schemas.profile import ProfileInDB, ProfileUpdate
 
 
 class AuthService:
-
     def __init__(self):
         self.supabase = None
         try:
@@ -24,11 +23,15 @@ class AuthService:
                 or not hasattr(settings, "SUPABASE_SERVICE_ROLE_KEY")
                 or not settings.SUPABASE_SERVICE_ROLE_KEY
             ):
-                logger.error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in environment")
+                logger.error(
+                    "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in environment"
+                )
                 return
 
             options = ClientOptions(
-                postgrest_client_timeout=60, storage_client_timeout=120, auto_refresh_token=True
+                postgrest_client_timeout=60,
+                storage_client_timeout=120,
+                auto_refresh_token=True,
             )
 
             supabase_url = settings.SUPABASE_URL
@@ -48,7 +51,9 @@ class AuthService:
         try:
             try:
                 logger.info(f"Attempting to create user with email: {email}")
-                auth_response = self.supabase.auth.sign_up({"email": email, "password": password})
+                auth_response = self.supabase.auth.sign_up(
+                    {"email": email, "password": password}
+                )
                 logger.info(f"Auth response received: {auth_response}")
             except Exception as auth_err:
                 logger.error(f"Error during user creation with Supabase: {auth_err}")
@@ -60,7 +65,8 @@ class AuthService:
             if not auth_response or not auth_response.user:
                 logger.error("Auth response did not contain user data")
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create user"
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to create user",
                 )
 
             # Get the user ID from the response
@@ -78,7 +84,9 @@ class AuthService:
             logger.error(f"Error creating user with profile: {e}")
             return None
 
-    def authenticate_user(self, email: str, password: str) -> Tuple[bool, Optional[Dict[str, Any]]]:
+    def authenticate_user(
+        self, email: str, password: str
+    ) -> Tuple[bool, Optional[Dict[str, Any]]]:
         """Authenticate user and return session data."""
         try:
             try:
@@ -90,7 +98,9 @@ class AuthService:
                 return False, None
 
             if not auth_response or not auth_response.user:
-                logger.warning(f"Authentication failed for {email}: No user in response")
+                logger.warning(
+                    f"Authentication failed for {email}: No user in response"
+                )
                 return False, None
 
             # Get user profile
@@ -161,7 +171,11 @@ class AuthService:
         """Verify JWT token and get user data."""
         try:
             user_response = self.supabase.auth.get_user(token)
-            if not user_response or not hasattr(user_response, "user") or not user_response.user:
+            if (
+                not user_response
+                or not hasattr(user_response, "user")
+                or not user_response.user
+            ):
                 return None
 
             user_id = user_response.user.id
@@ -178,7 +192,9 @@ class AuthService:
             logger.error(f"Token verification error: {e}")
             return None
 
-    def create_profile(self, user_id: str, username: Optional[str] = None) -> Optional[ProfileInDB]:
+    def create_profile(
+        self, user_id: str, username: Optional[str] = None
+    ) -> Optional[ProfileInDB]:
         """Create a profile for an existing user."""
         try:
             # First check if profile exists
@@ -228,7 +244,9 @@ class AuthService:
             response_obj = self.supabase.auth.refresh_session(token)
 
             session_obj = response_obj.session
-            session_dict = session_obj.dict() if hasattr(session_obj, "dict") else session_obj
+            session_dict = (
+                session_obj.dict() if hasattr(session_obj, "dict") else session_obj
+            )
             return session_dict
         except Exception as e:
             logger.error(f"Error logging out user with profile: {e}")

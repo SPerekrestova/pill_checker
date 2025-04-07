@@ -2,14 +2,14 @@ import logging
 import os
 import re
 from functools import lru_cache
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 from urllib.parse import quote_plus
 
 import requests
 import torch
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+from transformers import AutoModelForTokenClassification, AutoTokenizer, pipeline
 
 # Configure logging
 logging.basicConfig(
@@ -71,7 +71,11 @@ def get_ner_pipeline():
 
         # Create NER pipeline
         ner = pipeline(
-            "ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple", device=DEVICE
+            "ner",
+            model=model,
+            tokenizer=tokenizer,
+            aggregation_strategy="simple",
+            device=DEVICE,
         )
         return ner
     except Exception as e:
@@ -149,14 +153,20 @@ class RxNormClient:
                             details = RxNormClient.get_drug_details(rxcui)
                             if details and "allRelatedGroup" in details:
                                 # Extract information from related groups
-                                for related_group in details["allRelatedGroup"]["conceptGroup"]:
+                                for related_group in details["allRelatedGroup"][
+                                    "conceptGroup"
+                                ]:
                                     if "conceptProperties" in related_group:
                                         for prop in related_group["conceptProperties"]:
                                             if related_group["tty"] == "SY":  # Synonym
                                                 synonyms.append(prop["name"])
-                                            elif related_group["tty"] == "BN":  # Brand name
+                                            elif (
+                                                related_group["tty"] == "BN"
+                                            ):  # Brand name
                                                 brand_names.append(prop["name"])
-                                            elif related_group["tty"] == "IN":  # Ingredient
+                                            elif (
+                                                related_group["tty"] == "IN"
+                                            ):  # Ingredient
                                                 related_drugs.append(prop["name"])
 
         # Create entity detail
@@ -211,7 +221,12 @@ def extract_entities(req: TextRequest, ner=Depends(get_ner_pipeline)) -> EntityR
 
             # Add to results
             entities.append(
-                Entity(text=entity_text, label=entity_label, score=entity_score, details=details)
+                Entity(
+                    text=entity_text,
+                    label=entity_label,
+                    score=entity_score,
+                    details=details,
+                )
             )
 
         return EntityResponse(entities=entities)

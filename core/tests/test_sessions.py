@@ -1,14 +1,14 @@
 """Tests for session management."""
 
-from unittest.mock import MagicMock, patch
 import uuid
+from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from core.app.services.session_service import get_current_user
 from core.app.core.security import setup_security
+from core.app.services.session_service import get_current_user
 
 # Test data
 TEST_TOKEN = "test_token"

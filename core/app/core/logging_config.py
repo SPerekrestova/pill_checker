@@ -1,6 +1,7 @@
 import logging
 import sys
 from pathlib import Path
+
 from .config import settings
 
 
@@ -26,7 +27,9 @@ def setup_logging() -> logging.Logger:
 
     # Create formatters
     console_format = logging.Formatter("%(levelname)s - %(message)s")
-    file_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    file_format = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)

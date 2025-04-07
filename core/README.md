@@ -374,7 +374,7 @@ For ease of use, this project includes several convenience scripts:
    ```bash
    # Make script executable if needed
    chmod +x scripts/setup_supabase.sh
-   
+
    # Run setup script
    ./scripts/setup_supabase.sh
    ```
@@ -390,7 +390,7 @@ For ease of use, this project includes several convenience scripts:
    ```bash
    # Make script executable if needed
    chmod +x scripts/generate_migration.sh
-   
+
    # Generate a new migration
    ./scripts/generate_migration.sh "description_of_changes"
    ```
