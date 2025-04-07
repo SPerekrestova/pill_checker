@@ -1,9 +1,9 @@
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """Application settings"""
-
     # Model settings
     SPACY_MODEL: str = Field(default="en_ner_bc5cdr_md", env="SPACY_MODEL")
     LINKER_NAME: str = Field(default="rxnorm", env="LINKER_NAME")

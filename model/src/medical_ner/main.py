@@ -16,14 +16,6 @@ configure_logging()
 logger = logging.getLogger(__name__)
 
 
-@app.middleware("http")
-async def add_process_time_header(request: Request, call_next):
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    return response
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Preload the model at startup
@@ -61,6 +53,14 @@ def create_application() -> FastAPI:
 
 
 app = create_application()
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
 
 if __name__ == "__main__":
     import uvicorn
