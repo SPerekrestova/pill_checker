@@ -21,16 +21,6 @@ services:
 #    networks:
 #      - private_network
 
-#  ui:
-#    image: ghcr.io/sperekrestova/pill-checker-ui:latest
-#    ports:
-#      - "19000:19000"
-#      - "19001:19001"
-#      - "19002:19002"
-#    restart: always
-#    networks:
-#      - private_network
-
   supabase-db:
     image: supabase/postgres:latest
     restart: always

@@ -22,10 +22,6 @@ This project is not just a tech challenge – it's a passion project that shows 
 - **Local Development:** Comprehensive setup instructions and configuration files are provided for easy local deployment and development.
 - **AI & NLP:** Leveraging large language models along with pipelines for image text extraction using the [en_ner_bc5cdr_md model from SciSpacy](https://github.com/allenai/scispacy) paired with the [RxNorm linker](https://www.nlm.nih.gov/research/umls/rxnorm/index.html).
 
-## Frontend UI
-
-The user interface is a vital part of PillChecker. Currently, a simple web version is available to showcase the core functionality of medication scanning and analysis. The mobile UI, which will provide a more convenient way to scan medications on the go, is under active development by [Dan K.](https://github.com/dankrasilnikov).
-
 ## Challenges & Learnings
 
 Building PillChecker was a journey full of learning and experimentation. Here are some hurdles I overcame:
@@ -46,7 +42,7 @@ There's plenty more on the horizon! Here's what I'm planning next:
 
 ## Links & Acknowledgments
 
-A huge thanks to [Dan K.](https://github.com/dankrasilnikov) for the UI part and [Hiddenmarten](https://github.com/hiddenmarten) for the whole DevOps support!
+A huge thanks to [Hiddenmarten](https://github.com/hiddenmarten) for the whole DevOps support!
 
 Check out the tools I used:
 - [SciSpacy (en_ner_bc5cdr_md model)](https://github.com/allenai/scispacy)

@@ -31,7 +31,6 @@ test_core: pip_deps
 # Variables
 MODEL_IMAGE_NAME = pill-checker-model
 CORE_IMAGE_NAME = pill-checker-core
-UI_IMAGE_NAME = pill-checker-ui
 IMAGE_REGISTRY = ghcr.io
 IMAGE_REPOSITORY = sperekrestova
 IMAGE_VERSION = latest
@@ -54,9 +53,6 @@ image-model:
 image-core:
 	docker buildx build --platform $(PLATFORMS) -t $(CORE_IMAGE_TAG) $(PUSH_PARAMS) -f core/Dockerfile core
 
-.PHONY: image-ui
-image-ui:
-	docker buildx build --platform $(PLATFORMS) -t $(UI_IMAGE_TAG) $(PUSH_PARAMS) -f ui/Dockerfile ui
 
 .PHONY: image
-image: image-model image-core image-ui
+image: image-model image-core

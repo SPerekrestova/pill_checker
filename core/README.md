@@ -418,7 +418,6 @@ These scripts simplify the database management process and ensure that both Alem
    - Log errors appropriately
 
 ## API Documentation
-- Swagger UI: `/docs`
 - ReDoc: `/redoc`
 - OpenAPI JSON: `/openapi.json`
 
