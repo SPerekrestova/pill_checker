@@ -2,9 +2,17 @@
 .PHONY: test
 test: test_model test_core
 
+# CI test target that ensures we only run unit tests
+.PHONY: test_ci
+test_ci: pip_deps
+	cd model && \
+	python -m unittest tests/test_main.py && \
+	cd ../core && \
+	PYTHONPATH=. pytest --cov=app tests/ -k "not integration"
+
 .PHONY: pip_deps
 pip_deps:
-	python -m pip install --upgrade pip && \
+	python3.9 -m pip install --upgrade pip && \
 	pip install -r model/requirements.txt && \
 	pip install -r core/requirements.txt
 

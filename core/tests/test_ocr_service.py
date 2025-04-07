@@ -1,14 +1,13 @@
 """Tests for the OCR service."""
 
 import io
-import pytest
 from unittest.mock import patch
 
+import pytest
 from PIL import Image
-from app.services.ocr_service import (
-    EasyOCRClient,
-)
-import app.services.ocr_service
+
+from core.app.main import app
+from core.app.services.ocr_service import EasyOCRClient
 
 # Original client reference
 _original_client = None
@@ -149,7 +148,9 @@ class TestOCRService:
     def test_preprocess_crop(self, mock_ocr_client, test_image):
         """Test image cropping."""
         # The real implementation
-        result = app.services.ocr_service.EasyOCRClient.preprocess_crop(mock_ocr_client, test_image)
+        result = app.services.ocr_service.EasyOCRClient.preprocess_crop(
+            mock_ocr_client, test_image
+        )
         assert result.size == (30, 30)  # 50 - 10*2 = 30
 
     def test_get_ocr_client(self):

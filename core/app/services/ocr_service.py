@@ -1,7 +1,8 @@
 """OCR service for text recognition from images."""
 
 import io
-from typing import Union, BinaryIO
+from typing import BinaryIO, Union
+
 from PIL import Image, ImageEnhance, ImageFilter
 
 
@@ -20,12 +21,16 @@ class EasyOCRClient:
         """Convert image to grayscale."""
         return image.convert("L")
 
-    def preprocess_contrast(self, image: Image.Image, factor: float = 1.5) -> Image.Image:
+    def preprocess_contrast(
+        self, image: Image.Image, factor: float = 1.5
+    ) -> Image.Image:
         """Enhance image contrast."""
         enhancer = ImageEnhance.Contrast(image)
         return enhancer.enhance(factor)
 
-    def preprocess_sharpness(self, image: Image.Image, factor: float = 2.0) -> Image.Image:
+    def preprocess_sharpness(
+        self, image: Image.Image, factor: float = 2.0
+    ) -> Image.Image:
         """Enhance image sharpness."""
         enhancer = ImageEnhance.Sharpness(image)
         return enhancer.enhance(factor)
@@ -34,12 +39,16 @@ class EasyOCRClient:
         """Apply median filter to denoise image."""
         return image.filter(ImageFilter.MedianFilter(size=3))
 
-    def preprocess_threshold(self, image: Image.Image, threshold: int = 128) -> Image.Image:
+    def preprocess_threshold(
+        self, image: Image.Image, threshold: int = 128
+    ) -> Image.Image:
         """Convert image to binary using threshold."""
         grayscale = image.convert("L")
         return grayscale.point(lambda p: 255 if p > threshold else 0)
 
-    def preprocess_resize(self, image: Image.Image, scale_factor: float = 2.0) -> Image.Image:
+    def preprocess_resize(
+        self, image: Image.Image, scale_factor: float = 2.0
+    ) -> Image.Image:
         """Resize image by a scale factor."""
         width, height = image.size
         new_size = (int(width * scale_factor), int(height * scale_factor))

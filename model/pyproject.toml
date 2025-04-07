@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medical_ner"
+version = "0.1.0"
+description = "Medical NER & Linking Service"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.112.2",
+    "uvicorn>=0.34.0",
+    "spacy>=3.7.4",
+    "scispacy>=0.5.4",
+    "pydantic>=2.10.5",
+    "pydantic-settings>=2.0.0",
+    "httpx>=0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.1.0",
+    "isort>=5.12.0",
+    "ruff>=0.0.254",
+    "pre-commit>=3.2.0",
+]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+select = ["E", "F", "B", "I"]
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest]
+testpaths = ["tests"]
+python_files = "test_*.py"

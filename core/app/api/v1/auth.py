@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field, constr
 
-from app.core.logging_config import logger
-from app.services import session_service
-from app.services.auth_service import get_auth_service
+from core.app.core.logging_config import logger
+from core.app.services import session_service
+from core.app.services.auth_service import get_auth_service
 
 router = APIRouter()
 
@@ -89,7 +89,9 @@ async def register(user_data: UserCreate):
     try:
         service = get_auth_service()
         result = service.create_user_with_profile(
-            email=str(user_data.email), password=user_data.password, username=user_data.username
+            email=str(user_data.email),
+            password=user_data.password,
+            username=user_data.username,
         )
         if not result:
             raise HTTPException(
@@ -160,7 +162,8 @@ async def logout(response: Response):
     except Exception as e:
         logger.error(f"Logout error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error during logout"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error during logout",
         )
 
 

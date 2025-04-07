@@ -193,4 +193,4 @@ Key environment variables required by the application:
 └──────────┬──────────────┘              │
            │ implements                  │
            └──────────────────────────────
-``` 
+```

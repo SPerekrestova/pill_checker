@@ -1,6 +1,6 @@
 from .base import Base
-from .profile import Profile
 from .medication import Medication
+from .profile import Profile
 
 __all__ = [
     "Base",

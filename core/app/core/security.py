@@ -7,8 +7,8 @@ from fastapi.security import OAuth2PasswordBearer
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import ASGIApp
 
 from .config import settings
@@ -27,7 +27,9 @@ limiter = Limiter(
 )
 
 
-async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> Response:
+async def rate_limit_exceeded_handler(
+    request: Request, exc: RateLimitExceeded
+) -> Response:
     """Handle rate limit exceeded errors."""
     return Response(
         status_code=429,
@@ -60,9 +62,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
-        response.headers["Permissions-Policy"] = (
-            "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
-        )
+        response.headers[
+            "Permissions-Policy"
+        ] = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
 
         # Content Security Policy
         csp_directives = [
@@ -81,9 +83,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # HSTS (only in production)
         if self.hsts and not settings.DEBUG:
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains; preload"
-            )
+            response.headers[
+                "Strict-Transport-Security"
+            ] = "max-age=31536000; includeSubDomains; preload"
 
         return response
 
@@ -122,7 +124,8 @@ def setup_security(app: FastAPI) -> None:
     # Trusted hosts middleware (only in production)
     if not settings.DEBUG:
         app.add_middleware(
-            TrustedHostMiddleware, allowed_hosts=[str(host) for host in settings.TRUSTED_HOSTS]
+            TrustedHostMiddleware,
+            allowed_hosts=[str(host) for host in settings.TRUSTED_HOSTS],
         )
 
     # Rate limiting

@@ -2,15 +2,16 @@
 
 import os
 import uuid
-import pytest
-from unittest.mock import MagicMock
-from sqlalchemy.orm import Session
 from datetime import datetime
+from unittest.mock import MagicMock
 
-from app.core.config import Settings
-from app.models import Profile, Medication
-from app.services.ocr_service import EasyOCRClient
-import app.services.ocr_service  # Import the module to access its global variables
+import pytest
+from sqlalchemy.orm import Session
+
+from core.app.core.config import Settings
+from core.app.main import app
+from core.app.models import Medication, Profile
+from core.app.services.ocr_service import EasyOCRClient
 
 # Required for settings validation
 os.environ["SECRET_KEY"] = "test-secret-key"

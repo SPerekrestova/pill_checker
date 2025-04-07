@@ -1,9 +1,19 @@
-from datetime import datetime
-from typing import TYPE_CHECKING, Dict, Any, Optional
-from sqlalchemy import Column, BigInteger, String, Text, ForeignKey, JSON, DateTime, Index
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, Mapped
 import uuid
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, relationship
 
 from .base import Base
 
@@ -43,7 +53,9 @@ class Medication(Base):
         String(length=255), nullable=True, comment="Name or title of the medication"
     )
     scan_date: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, comment="Date when the medication was scanned"
+        DateTime,
+        default=datetime.utcnow,
+        comment="Date when the medication was scanned",
     )
     active_ingredients: Mapped[Optional[str]] = Column(
         Text, nullable=True, comment="List of active ingredients in text format"
@@ -66,8 +78,12 @@ class Medication(Base):
 
     # Indexes
     __table_args__ = (
-        Index("idx_medications_profile_id", "profile_id"),  # Add index for profile_id queries
-        Index("idx_medications_scan_date", "scan_date"),  # Add index for date-based queries
+        Index(
+            "idx_medications_profile_id", "profile_id"
+        ),  # Add index for profile_id queries
+        Index(
+            "idx_medications_scan_date", "scan_date"
+        ),  # Add index for date-based queries
         Index("idx_medications_title", "title"),  # Add index for title searches
     )
 

@@ -5,10 +5,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api.v1 import auth, medications
-from app.core.config import settings
-from app.core.events import setup_events
-from app.core.security import setup_security
+from core.app.api.v1 import auth, medications
+from core.app.core.config import settings
+from core.app.core.events import setup_events
+from core.app.core.security import setup_security
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -59,7 +59,9 @@ async def login_page(request: Request):
 @app.get("/register")
 async def register_page(request: Request):
     """Render the registration page."""
-    return templates.TemplateResponse("register.html", {"request": request, "user": None})
+    return templates.TemplateResponse(
+        "register.html", {"request": request, "user": None}
+    )
 
 
 @app.get("/dashboard")
@@ -94,5 +96,7 @@ async def medication_detail_page(request: Request, medication_id: int):
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 
 app.include_router(
-    medications.router, prefix=f"{settings.API_V1_STR}/medications", tags=["medications"]
+    medications.router,
+    prefix=f"{settings.API_V1_STR}/medications",
+    tags=["medications"],
 )

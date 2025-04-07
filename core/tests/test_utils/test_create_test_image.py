@@ -4,12 +4,13 @@ This script creates test images with medication-like text, suitable for OCR test
 It can be used standalone or imported by the test suite to generate test data.
 """
 
-from PIL import Image, ImageDraw, ImageFont
 import os
 import sys
-import pytest
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import pytest
+from PIL import Image, ImageDraw, ImageFont
 
 
 def create_test_image(
@@ -120,7 +121,11 @@ def create_multiple_test_images(output_dir=None, count=3):
             "filename": "test_medication_info.png",
             "include_details": False,
         },
-        {"text": "DOSAGE INSTRUCTIONS", "filename": "test_dosage.png", "include_details": True},
+        {
+            "text": "DOSAGE INSTRUCTIONS",
+            "filename": "test_dosage.png",
+            "include_details": True,
+        },
     ]
 
     created_images = []
@@ -165,7 +170,10 @@ def test_create_single_image(temp_dir):
 def test_create_image_without_details(temp_dir):
     """Test that an image can be created without medication details."""
     image_path = create_test_image(
-        text="No Details", filename="no_details.png", output_dir=temp_dir, include_details=False
+        text="No Details",
+        filename="no_details.png",
+        output_dir=temp_dir,
+        include_details=False,
     )
 
     # Verify the file exists

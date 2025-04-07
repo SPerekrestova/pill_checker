@@ -7,10 +7,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api.v1.auth import router as auth_router
-from app.core.security import setup_security
-from app.services.auth_service import AuthService
-from app.schemas.profile import ProfileInDB
+from core.app.api.v1.auth import router as auth_router
+from core.app.core.security import setup_security
+from core.app.schemas.profile import ProfileInDB
+from core.app.services.auth_service import AuthService
 
 # Test data
 TEST_USER_EMAIL = "test@example.com"
@@ -102,7 +102,9 @@ class TestAuthEndpoints:
         assert response.status_code == 201
         assert "user_id" in response.json()
         mock_auth_service.create_user_with_profile.assert_called_once_with(
-            email=TEST_USER_EMAIL, password=TEST_USER_PASSWORD, username=TEST_DISPLAY_NAME
+            email=TEST_USER_EMAIL,
+            password=TEST_USER_PASSWORD,
+            username=TEST_DISPLAY_NAME,
         )
 
     def test_register_password_mismatch(self, test_client):
@@ -123,7 +125,8 @@ class TestAuthEndpoints:
     def test_login_success(self, test_client, mock_auth_service):
         """Test successful login."""
         response = test_client.post(
-            "/api/v1/auth/login", data={"username": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD}
+            "/api/v1/auth/login",
+            data={"username": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD},
         )
 
         assert response.status_code == 200
@@ -139,7 +142,8 @@ class TestAuthEndpoints:
         mock_auth_service.authenticate_user.return_value = (False, None)
 
         response = test_client.post(
-            "/api/v1/auth/login", data={"username": TEST_USER_EMAIL, "password": "wrong_password"}
+            "/api/v1/auth/login",
+            data={"username": TEST_USER_EMAIL, "password": "wrong_password"},
         )
 
         assert response.status_code == 401
@@ -160,7 +164,10 @@ class TestAuthEndpoints:
         # Modify the mock to expect 'token' instead of 'refresh_token'
         # We don't want to modify the core code, so we adapt our test
         mock_auth_service.refresh_session = MagicMock(
-            return_value={"access_token": "new_access_token", "refresh_token": "new_refresh_token"}
+            return_value={
+                "access_token": "new_access_token",
+                "refresh_token": "new_refresh_token",
+            }
         )
 
         response = test_client.post(
