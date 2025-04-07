@@ -1,49 +1,41 @@
-#name: Build & Deploy MedsRecognition service
-#
-#on:
-#  pull_request:
-#    types: [closed]
-#    branches:
-#      - master
-#  push:
-#    branches:
-#      - master
-#
-#jobs:
-#  make_image:
-#    runs-on: ubuntu-24.04
-#    steps:
-#      - uses: actions/checkout@v4.2.2
-#      - uses: docker/setup-buildx-action@v3.9.0
-#      - uses: docker/login-action@v3.3.0
-#        with:
-#          registry: ghcr.io
-#          username: ${{ github.actor }}
-#          password: ${{ secrets.GITHUB_TOKEN }}
-#      - run: PUSH=1 make image
-#  deploy:
-#    needs: make_image
-#    runs-on: ubuntu-24.04
-#    steps:
-#      - name: Deploy MedsRecognition via SSH
-#        uses: appleboy/ssh-action@v0.1.8
-#        with:
-#          host: ${{ secrets.DEPLOY_HOST }}
-#          username: ${{ secrets.DEPLOY_USER }}
-#          key: ${{ secrets.DEPLOY_KEY }}
-#          script: |
-#            # Write a .env file with secrets to be used by docker-compose (this file should be excluded from source control)
-#            cd pill_checker/
-#            cat <<EOF > core.env
-#            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-#            SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
-#            SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
-#            DATABASE_NAME=${{ secrets.DATABASE_NAME }}
-#            DATABASE_USER=${{ secrets.DATABASE_USER }}
-#            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
-#            DATABASE_HOST=${{ secrets.DATABASE_HOST }}
-#            DATABASE_PORT=${{ secrets.DATABASE_PORT }}
-#            DJANGO_SETTINGS_MODULE=${{ secrets.DJANGO_SETTINGS_MODULE }}
-#            EOF
-#            docker-compose pull
-#            docker-compose up -d
+name: Build & Deploy PillChecker
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+  make_image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          submodules: recursive
+      - uses: docker/setup-buildx-action@v3.9.0
+      - uses: docker/login-action@v3.3.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: PUSH=1 make image-all
+  deploy:
+    needs: make_image
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Deploy PillChecker via SSH
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd PillChecker/
+            git pull
+            git submodule update --init --recursive
+            docker-compose pull
+            docker-compose up -d

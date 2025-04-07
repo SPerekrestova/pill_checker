@@ -1,58 +1,35 @@
-# Test targets
-.PHONY: test
-test: test_model test_core
+.PHONY: setup-all test-all image-all deploy-all
 
-# CI test target that ensures we only run unit tests
-.PHONY: test_ci
-test_ci: pip_deps
-	cd model && \
-	python -m unittest tests/test_main.py && \
-	cd ../core && \
-	PYTHONPATH=. pytest --cov=app tests/ -k "not integration"
+# Core service targets
+setup-core:
+	cd core && pip install -e ".[dev]"
 
-.PHONY: pip_deps
-pip_deps:
-	python3.9 -m pip install --upgrade pip && \
-	pip install -r model/requirements.txt && \
-	pip install -r core/requirements.txt
+test-core:
+	cd core && pytest
 
-.PHONY: test_model
-test_model: pip_deps
-	cd model && \
-	python -m unittest tests/test_main.py
-
-.PHONY: test_core
-test_core: pip_deps
-	cd core && \
-	pytest --cov=app tests/
-
-# Build image targets
-
-# Variables
-MODEL_IMAGE_NAME = pill-checker-model
-CORE_IMAGE_NAME = pill-checker-core
-IMAGE_REGISTRY = ghcr.io
-IMAGE_REPOSITORY = sperekrestova
-IMAGE_VERSION = latest
-
-# Define target platforms for multi-arch builds (including linux/arm64/v8)
-PLATFORMS = linux/amd64,linux/arm64/v8
-
-MODEL_IMAGE_TAG = $(IMAGE_REGISTRY)/$(IMAGE_REPOSITORY)/$(MODEL_IMAGE_NAME):$(IMAGE_VERSION)
-CORE_IMAGE_TAG = $(IMAGE_REGISTRY)/$(IMAGE_REPOSITORY)/$(CORE_IMAGE_NAME):$(IMAGE_VERSION)
-UI_IMAGE_TAG = $(IMAGE_REGISTRY)/$(IMAGE_REPOSITORY)/$(UI_IMAGE_NAME):$(IMAGE_VERSION)
-
-# If the environment variable PUSH is non-empty, include the --push flag.
-PUSH_PARAMS = $(if $(PUSH),--push,)
-
-.PHONY: image-model
-image-model:
-	docker buildx build --platform $(PLATFORMS) -t $(MODEL_IMAGE_TAG) $(PUSH_PARAMS) -f model/Dockerfile model
-
-.PHONY: image-core
 image-core:
-	docker buildx build --platform $(PLATFORMS) -t $(CORE_IMAGE_TAG) $(PUSH_PARAMS) -f core/Dockerfile core
+	docker build -t ghcr.io/yourusername/pill-checker-core:latest -f core/Dockerfile core
 
+# Model service targets
+setup-model:
+	cd model && pip install -e ".[dev]"
 
-.PHONY: image
-image: image-model image-core
+test-model:
+	cd model && pytest
+
+image-model:
+	docker build -t ghcr.io/yourusername/pill-checker-model:latest -f model/Dockerfile model
+
+# Combined targets
+setup-all: setup-core setup-model
+
+test-all: test-core test-model
+
+image-all: image-core image-model
+
+# Deployment target using docker-compose
+deploy:
+	docker-compose up -d
+
+# CI target that runs all tests
+test_ci: test-all
