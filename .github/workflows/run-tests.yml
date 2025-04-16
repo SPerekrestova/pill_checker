@@ -1,15 +1,28 @@
-name: run_tests
+name: Run Tests
 
 on:
   pull_request:
+    branches: [ main, master ]
 
 jobs:
-  run_tests:
-    runs-on: ubuntu-24.04
+  test:
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-      - uses: docker/setup-buildx-action@v3.9.0
-      - run: make test_ci
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        cd /core
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        cd /core
+        pytest tests -v
