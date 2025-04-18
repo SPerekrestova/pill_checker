@@ -3,8 +3,8 @@
 import uuid
 from unittest.mock import MagicMock
 
-from src.pill_checker.app.models import Medication, Profile
-from src.pill_checker.app.schemas import (
+from src.pill_checker.models import Medication, Profile
+from src.pill_checker.schemas import (
     MedicationCreate,
     MedicationResponse,
     ProfileCreate,
@@ -119,9 +119,7 @@ class TestMedicationModel:
         assert medication.created_at is not None
         assert medication.updated_at is not None
 
-    def test_medication_schema_validation(
-        self, test_db_session, sample_medication_data
-    ):
+    def test_medication_schema_validation(self, test_db_session, sample_medication_data):
         """Test MedicationCreate schema validation."""
         # First create a profile
         profile_id = uuid.uuid4()
@@ -143,9 +141,7 @@ class TestMedicationModel:
         assert medication_create.prescription_details == data["prescription_details"]
         assert str(medication_create.scan_url) == data["scan_url"]
 
-    def test_medication_schema_from_model(
-        self, test_db_session, sample_medication_data
-    ):
+    def test_medication_schema_from_model(self, test_db_session, sample_medication_data):
         """Test converting from model to Pydantic schema."""
         # First create a profile
         profile_id = uuid.uuid4()

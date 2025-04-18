@@ -37,9 +37,7 @@ def upgrade() -> None:
             unique=True,
             comment="Display name of the user",
         ),
-        sa.Column(
-            "bio", sa.Text(), nullable=True, comment="User's biography or description"
-        ),
+        sa.Column("bio", sa.Text(), nullable=True, comment="User's biography or description"),
         sa.Column("created_at", sa.TIMESTAMP(), nullable=True),
         sa.Column("updated_at", sa.TIMESTAMP(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -83,9 +81,7 @@ def upgrade() -> None:
             nullable=True,
             comment="Raw text extracted from the medication scan",
         ),
-        sa.Column(
-            "dosage", sa.String(length=255), nullable=True, comment="Dosage information"
-        ),
+        sa.Column("dosage", sa.String(length=255), nullable=True, comment="Dosage information"),
         sa.Column(
             "prescription_details",
             sa.JSON(),
@@ -103,12 +99,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["profile_id"], ["profiles.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        "idx_medications_profile_id", "medications", ["profile_id"], unique=False
-    )
-    op.create_index(
-        "idx_medications_scan_date", "medications", ["scan_date"], unique=False
-    )
+    op.create_index("idx_medications_profile_id", "medications", ["profile_id"], unique=False)
+    op.create_index("idx_medications_scan_date", "medications", ["scan_date"], unique=False)
     op.create_index("idx_medications_title", "medications", ["title"], unique=False)
 
 

@@ -125,7 +125,11 @@ class Settings(BaseSettings):
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        database_url = f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@host.docker.internal:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        database_url = f"postgresql+psycopg2://{
+            self.POSTGRES_USER}:{
+            self.POSTGRES_PASSWORD}@host.docker.internal:{
+            self.POSTGRES_PORT}/{
+                self.POSTGRES_DB}"
         return database_url
 
     class Config:

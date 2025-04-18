@@ -5,17 +5,17 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from supabase import Client, create_client
 
-from src.pill_checker.app.core.config import settings
-from src.pill_checker.app.core.database import get_db
-from src.pill_checker.app.core.logging_config import logger
-from src.pill_checker.app.models.medication import Medication
-from src.pill_checker.app.schemas.medication import (
+from src.pill_checker.core.config import settings
+from src.pill_checker.core.database import get_db
+from src.pill_checker.core.logging_config import logger
+from src.pill_checker.models.medication import Medication
+from src.pill_checker.schemas.medication import (
     MedicationCreate,
     MedicationResponse,
     PaginatedResponse,
 )
-from src.pill_checker.app.services.ocr_service import get_ocr_client
-from src.pill_checker.app.services.session_service import get_current_user
+from src.pill_checker.services.ocr import get_ocr_client
+from src.pill_checker.services.session_service import get_current_user
 
 router = APIRouter()
 
@@ -140,8 +140,6 @@ def get_medication_by_id(
     medication = result.scalar_one_or_none()
 
     if not medication:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Medication not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Medication not found")
 
     return MedicationResponse.model_validate(medication)

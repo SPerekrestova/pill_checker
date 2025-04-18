@@ -7,10 +7,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.pill_checker.app.api.v1.auth import router as auth_router
-from src.pill_checker.app.core.security import setup_security
-from src.pill_checker.app.schemas.profile import ProfileInDB
-from src.pill_checker.app.services.auth_service import AuthService
+from src.pill_checker.api.v1.auth import router as auth_router
+from src.pill_checker.core.security import setup_security
+from src.pill_checker.schemas.profile import ProfileInDB
+from src.pill_checker.services.auth import AuthService
 
 # Test data
 TEST_USER_EMAIL = "test@example.com"

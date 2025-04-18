@@ -3,7 +3,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
-from src.pill_checker.app.services.auth_service import get_auth_service
+from src.pill_checker.services.auth import get_auth_service
 
 # Main OAuth2 scheme for required authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", scheme_name="JWT")

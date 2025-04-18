@@ -7,8 +7,8 @@ import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from src.pill_checker.app.core.security import setup_security
-from src.pill_checker.app.services.session_service import get_current_user
+from src.pill_checker.core.security import setup_security
+from src.pill_checker.services.session_service import get_current_user
 
 # Test data
 TEST_TOKEN = "test_token"

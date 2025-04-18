@@ -78,12 +78,8 @@ class Medication(Base):
 
     # Indexes
     __table_args__ = (
-        Index(
-            "idx_medications_profile_id", "profile_id"
-        ),  # Add index for profile_id queries
-        Index(
-            "idx_medications_scan_date", "scan_date"
-        ),  # Add index for date-based queries
+        Index("idx_medications_profile_id", "profile_id"),  # Add index for profile_id queries
+        Index("idx_medications_scan_date", "scan_date"),  # Add index for date-based queries
         Index("idx_medications_title", "title"),  # Add index for title searches
     )
 

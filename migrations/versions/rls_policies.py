@@ -157,19 +157,13 @@ def downgrade() -> None:
     op.execute("DROP POLICY IF EXISTS insert_own_medications ON medications;")
     op.execute("DROP POLICY IF EXISTS update_own_medications ON medications;")
     op.execute("DROP POLICY IF EXISTS delete_own_medications ON medications;")
-    op.execute(
-        "DROP POLICY IF EXISTS supabase_admin_access_medications ON medications;"
-    )
+    op.execute("DROP POLICY IF EXISTS supabase_admin_access_medications ON medications;")
     op.execute("DROP POLICY IF EXISTS service_role_access_medications ON medications;")
 
     # Revoke permissions
     op.execute("REVOKE SELECT, INSERT, UPDATE, DELETE ON profiles FROM authenticated;")
-    op.execute(
-        "REVOKE SELECT, INSERT, UPDATE, DELETE ON medications FROM authenticated;"
-    )
-    op.execute(
-        "REVOKE USAGE, SELECT ON SEQUENCE medications_id_seq FROM authenticated;"
-    )
+    op.execute("REVOKE SELECT, INSERT, UPDATE, DELETE ON medications FROM authenticated;")
+    op.execute("REVOKE USAGE, SELECT ON SEQUENCE medications_id_seq FROM authenticated;")
 
     # Disable Row Level Security
     op.execute("ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;")

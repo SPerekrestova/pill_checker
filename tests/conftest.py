@@ -8,10 +8,10 @@ from unittest.mock import MagicMock
 import pytest
 from sqlalchemy.orm import Session
 
-from src.pill_checker.app.core.config import Settings
-from src.pill_checker.app.main import app
-from src.pill_checker.app.models import Medication, Profile
-from src.pill_checker.app.services.ocr_service import EasyOCRClient
+from src.pill_checker.core.config import Settings
+from src.pill_checker.main import app
+from src.pill_checker.models import Medication, Profile
+from src.pill_checker.services.ocr import EasyOCRClient
 
 # Required for settings validation
 os.environ["SECRET_KEY"] = "test-secret-key"

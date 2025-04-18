@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field, constr
 
-from src.pill_checker.app.core.logging_config import logger
-from src.pill_checker.app.services import session_service
-from src.pill_checker.app.services.auth_service import get_auth_service
+from src.pill_checker.core.logging_config import logger
+from src.pill_checker.services import session_service
+from src.pill_checker.services.auth import get_auth_service
 
 router = APIRouter()
 

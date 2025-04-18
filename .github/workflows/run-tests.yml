@@ -18,11 +18,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd /core
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -e ".[dev]"
 
     - name: Run tests
       run: |
-        cd /core
         pytest tests -v

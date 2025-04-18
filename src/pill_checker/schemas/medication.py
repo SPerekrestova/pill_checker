@@ -55,9 +55,7 @@ class MedicationInDB(MedicationBase):
 class MedicationResponse(MedicationInDB):
     """Schema for medication response."""
 
-    scan_url: Optional[str] = Field(
-        None, description="URL of the uploaded medication scan"
-    )
+    scan_url: Optional[str] = Field(None, description="URL of the uploaded medication scan")
 
 
 class PaginatedResponse(BaseSchema):

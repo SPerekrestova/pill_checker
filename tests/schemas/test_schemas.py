@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from src.pill_checker.app.schemas import (
+from src.pill_checker.schemas import (
     MedicationCreate,
     MedicationUpdate,
     ProfileCreate,
@@ -48,9 +48,7 @@ class TestProfileSchemas:
         assert profile.bio is None
 
         # Test full update
-        profile = ProfileUpdate(
-            **{k: v for k, v in sample_profile_data.items() if k != "id"}
-        )
+        profile = ProfileUpdate(**{k: v for k, v in sample_profile_data.items() if k != "id"})
         assert profile.username == sample_profile_data["username"]
         assert profile.bio == sample_profile_data["bio"]
 
@@ -101,10 +99,7 @@ class TestMedicationSchemas:
         # Test full update
         medication = MedicationUpdate(**sample_medication_data)
         assert medication.title == sample_medication_data["title"]
-        assert (
-            medication.active_ingredients
-            == sample_medication_data["active_ingredients"]
-        )
+        assert medication.active_ingredients == sample_medication_data["active_ingredients"]
 
 
 def test_schema_inheritance():

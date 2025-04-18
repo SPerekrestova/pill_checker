@@ -27,9 +27,7 @@ limiter = Limiter(
 )
 
 
-async def rate_limit_exceeded_handler(
-    request: Request, exc: RateLimitExceeded
-) -> Response:
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> Response:
     """Handle rate limit exceeded errors."""
     return Response(
         status_code=429,
@@ -62,9 +60,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
-        response.headers[
-            "Permissions-Policy"
-        ] = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+        response.headers["Permissions-Policy"] = (
+            "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+        )
 
         # Content Security Policy
         csp_directives = [
@@ -83,9 +81,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # HSTS (only in production)
         if self.hsts and not settings.DEBUG:
-            response.headers[
-                "Strict-Transport-Security"
-            ] = "max-age=31536000; includeSubDomains; preload"
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains; preload"
+            )
 
         return response
 

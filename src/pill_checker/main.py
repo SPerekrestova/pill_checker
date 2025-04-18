@@ -5,11 +5,11 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from src.pill_checker.app.api.v1 import auth
-from src.pill_checker.app.api.v1 import medications
-from src.pill_checker.app.core.config import settings
-from src.pill_checker.app.core.events import setup_events
-from src.pill_checker.app.core.security import setup_security
+from src.pill_checker.api.v1 import auth
+from src.pill_checker.api.v1 import medications
+from src.pill_checker.core.config import settings
+from src.pill_checker.core.events import setup_events
+from src.pill_checker.core.security import setup_security
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -60,9 +60,7 @@ async def login_page(request: Request):
 @app.get("/register")
 async def register_page(request: Request):
     """Render the registration page."""
-    return templates.TemplateResponse(
-        "register.html", {"request": request, "user": None}
-    )
+    return templates.TemplateResponse("register.html", {"request": request, "user": None})
 
 
 @app.get("/dashboard")
