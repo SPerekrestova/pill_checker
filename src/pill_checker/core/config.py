@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "PillChecker"
 
     # Security
-    SECRET_KEY: str
+    SECRET_KEY: str = "test-secret-key"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 11520
 
     # CORS
@@ -39,9 +39,9 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = os.getenv("POSTGRES_DB")
 
     # Supabase Settings
-    SUPABASE_URL: str
-    SUPABASE_KEY: str
-    SUPABASE_JWT_SECRET: str = None
+    SUPABASE_URL: str = "http://localhost:8000"
+    SUPABASE_KEY: str = "test-key"
+    SUPABASE_JWT_SECRET: str = "test-jwt-secret"
     SUPABASE_BUCKET_NAME: str = "scans"
     SUPABASE_ANON_KEY: str = None
     SUPABASE_SERVICE_ROLE_KEY: str = None

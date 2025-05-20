@@ -13,11 +13,6 @@ from src.pill_checker.main import app
 from src.pill_checker.models import Medication, Profile
 from src.pill_checker.services.ocr import EasyOCRClient
 
-# Required for settings validation
-os.environ["SECRET_KEY"] = "test-secret-key"
-os.environ["SUPABASE_URL"] = "http://localhost:8000"
-os.environ["SUPABASE_KEY"] = "test-key"
-os.environ["SUPABASE_JWT_SECRET"] = "test-jwt-secret"
 
 # Global variable to store the original OCR client
 _original_ocr_client = None
@@ -121,11 +116,6 @@ def sample_medication_data():
 
 class MockOCRClient(EasyOCRClient):
     """Mock OCR client for testing."""
-
-    def __init__(self, languages=None):
-        """Initialize without actual EasyOCR."""
-        self.languages = languages or ["en"]
-        # Skip real EasyOCR initialization
 
     def read_text(self, image_data):
         """Return mock text instead of performing actual OCR."""
