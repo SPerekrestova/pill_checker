@@ -2,4 +2,4 @@ lint.ignore = [
     "E501", # line too long
 ]
 line-length = 100
-exclude = ["migrations", "settings.py"]
+exclude = ["migrations", "settings.py", "tests.py", "tests/"]
