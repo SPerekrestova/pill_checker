@@ -26,17 +26,17 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: List[str] = []
 
     # Security
-    TRUSTED_HOSTS: List[str] = ["localhost", "127.0.0.1"]
+    TRUSTED_HOSTS: List[str] = ["localhost:8080", "127.0.0.1:8080"]
     RATE_LIMIT_PER_SECOND: int = 10
     RATE_LIMIT_PER_MINUTE: int = 100
     RATE_LIMIT_PER_HOUR: int = 1000
 
     # DB settings
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD")
-    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST")
-    POSTGRES_PORT: int = os.getenv("POSTGRES_PORT")
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB")
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_HOST: str = "127.0.0.1"
+    POSTGRES_PORT: int = "54322"
+    POSTGRES_DB: str = "postgres"
 
     # Supabase Settings
     SUPABASE_URL: str = "http://localhost:8000"
