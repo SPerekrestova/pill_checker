@@ -8,11 +8,11 @@ init-hook=
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=CVS,migrations,tests,settings.py
+ignore=CVS,migrations,tests,settings.py,tests/
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
-ignore-patterns=
+ignore-patterns=test_.*\.py
 
 # Python code to execute after the modules are loaded and before the actual
 # checking starts.
@@ -35,7 +35,7 @@ enable=all
 # option multiple times (only on the command line, not in the configuration
 # file where it should appear only once). See also the "--enable" option for
 # examples.
-disable=C0301,C0114,C0115,C0116,R0903,E0401,W0718,W3101,E0307,C0411,R1705,W1514,W0707,E501,W0125,E1101,C0103,C0415,W0613,R0801,W0611,W0108,W1203
+disable=C0301,C0114,C0115,C0116,R0903,E0401,W0718,W3101,E0307,C0411,R1705,W1514,W0707,W0125,E1101,C0103,C0415,W0613,R0801,W0611,W0108,W1203
 
 [REPORTS]
 # Set the output format. Available formats are text, parseable, colorized,

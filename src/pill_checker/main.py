@@ -10,6 +10,7 @@ from src.pill_checker.api.v1 import medications
 from src.pill_checker.core.config import settings
 from src.pill_checker.core.events import setup_events
 from src.pill_checker.core.security import setup_security
+from src.pill_checker.services import ocr, session_service, auth as auth_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -21,13 +22,23 @@ app = FastAPI(
 )
 
 # Configure static files and templates
-static_dir = Path("app/static")
-templates = Jinja2Templates(directory=Path("app/templates"))
+BASE_DIR = Path(__file__).parent
+static_dir = BASE_DIR / "static"
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Configure security and events
 setup_security(app)
 setup_events(app)
+
+
+class Services:
+    ocr_service = ocr
+    session_service = session_service
+    auth_service = auth_service
+
+
+app.services = Services()
 
 
 # Basic routes

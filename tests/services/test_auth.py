@@ -22,7 +22,7 @@ TEST_DISPLAY_NAME = "Test User"
 @pytest.fixture
 def mock_auth_service():
     """Mock Auth service."""
-    with patch("app.api.v1.auth.get_auth_service") as mock:
+    with patch("src.pill_checker.api.v1.auth.get_auth_service") as mock:
         # Create a proper return value for create_user_with_profile
         profile = ProfileInDB(
             id=TEST_USER_ID,

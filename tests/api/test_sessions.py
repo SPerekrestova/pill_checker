@@ -23,7 +23,7 @@ TEST_USER_DATA = {
 @pytest.fixture
 def mock_auth_service():
     """Mock Auth service."""
-    with patch("app.services.session_service.get_auth_service") as mock:
+    with patch("src.pill_checker.services.session_service.get_auth_service") as mock:
         service = MagicMock()
         service.verify_token = MagicMock(return_value=None)
         mock.return_value = service

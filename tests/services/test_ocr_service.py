@@ -153,7 +153,7 @@ class TestOCRService:
 
     def test_get_ocr_client(self):
         """Test the get_ocr_client function."""
-        with patch("app.services.ocr_service.EasyOCRClient") as mock_client_class:
+        with patch("src.pill_checker.services.ocr.EasyOCRClient") as mock_client_class:
             # Reset the global client
             app.services.ocr_service._ocr_client = None
 
