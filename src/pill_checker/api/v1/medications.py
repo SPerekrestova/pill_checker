@@ -5,22 +5,30 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from supabase import Client, create_client
 
-from src.pill_checker.core.config import settings
-from src.pill_checker.core.database import get_db
-from src.pill_checker.core.logging_config import logger
-from src.pill_checker.models.medication import Medication
-from src.pill_checker.schemas.medication import (
+from pill_checker.core.config import settings
+from pill_checker.core.database import get_db
+from pill_checker.core.logging_config import logger
+from pill_checker.models.medication import Medication
+from pill_checker.schemas.medication import (
     MedicationCreate,
     MedicationResponse,
     PaginatedResponse,
 )
-from src.pill_checker.services.ocr import get_ocr_client
-from src.pill_checker.services.session_service import get_current_user
+from pill_checker.services.ocr import get_ocr_client
+from pill_checker.services.session_service import get_current_user
 
 router = APIRouter()
 
-# Initialize Supabase client for storage
-supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+# Lazy initialization of Supabase client
+_supabase_client = None
+
+
+def get_supabase_client() -> Client:
+    """Get or create Supabase client instance."""
+    global _supabase_client
+    if _supabase_client is None:
+        _supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    return _supabase_client
 
 
 @router.post("/upload", response_model=MedicationResponse)
@@ -32,6 +40,9 @@ async def upload_medication(
 ):
     """Upload and process a medication image."""
     try:
+        # Get Supabase client
+        supabase = get_supabase_client()
+
         # Upload image to Supabase storage
         file_path = f"medications/{current_user['id']}/{image.filename}"
 

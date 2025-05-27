@@ -1,18 +1,42 @@
 """Test configuration and fixtures."""
 
+from pill_checker.services.ocr import EasyOCRClient
+from pill_checker.models import Medication, Profile
+from pill_checker.main import app
+from pill_checker.core.config import Settings
 import os
+import sys
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
+from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
-from src.pill_checker.core.config import Settings
-from src.pill_checker.main import app
-from src.pill_checker.models import Medication, Profile
-from src.pill_checker.services.ocr import EasyOCRClient
+# Add src to Python path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+# Load test environment variables
+test_env_path = Path(__file__).parent.parent / ".env.test"
+if test_env_path.exists():
+    load_dotenv(test_env_path, override=True)
+else:
+    # Set minimal required environment variables if .env.test doesn't exist
+    os.environ.update(
+        {
+            "APP_ENV": "testing",
+            "SECRET_KEY": "test-secret-key",
+            "SUPABASE_URL": "http://localhost:8000",
+            "SUPABASE_KEY": "test-key",
+            "SUPABASE_SERVICE_ROLE_KEY": "test-service-role-key",
+            "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/test_db",
+            "SKIP_REAL_OCR_TESTS": "True",
+        }
+    )
+
+# Now import the application modules
 
 # Global variable to store the original OCR client
 _original_ocr_client = None
@@ -117,6 +141,11 @@ def sample_medication_data():
 class MockOCRClient(EasyOCRClient):
     """Mock OCR client for testing."""
 
+    def __init__(self, languages=None):
+        """Initialize mock client without loading actual models."""
+        self.languages = languages or ["en"]
+        self.reader = MagicMock()
+
     def read_text(self, image_data):
         """Return mock text instead of performing actual OCR."""
         return "Mocked OCR text for testing"
@@ -126,14 +155,44 @@ class MockOCRClient(EasyOCRClient):
 def mock_ocr_service():
     """Mock the OCR service using our custom client."""
     global _original_ocr_client
-    # Save original OCR client
-    _original_ocr_client = app.services.ocr_service._ocr_client
 
-    # Set mock client
-    mock_client = MockOCRClient()
-    app.services.ocr_service._ocr_client = mock_client
+    # Skip if SKIP_REAL_OCR_TESTS is set
+    if os.environ.get("SKIP_REAL_OCR_TESTS", "").lower() == "true":
+        # Save original OCR client
+        _original_ocr_client = getattr(app.services.ocr_service, "_ocr_client", None)
 
-    yield mock_client
+        # Set mock client
+        mock_client = MockOCRClient()
+        app.services.ocr_service._ocr_client = mock_client
 
-    # Reset to original client
-    app.services.ocr_service._ocr_client = _original_ocr_client
+        yield mock_client
+
+        # Reset to original client
+        if _original_ocr_client:
+            app.services.ocr_service._ocr_client = _original_ocr_client
+    else:
+        # Don't mock if we want to run real OCR tests
+        yield None
+
+
+@pytest.fixture(autouse=True)
+def mock_supabase_client():
+    """Mock Supabase client for all tests."""
+    mock_client = MagicMock()
+
+    # Mock both the auth service and medications API
+    with (
+        patch("pill_checker.services.auth.create_client") as mock_auth_create,
+        patch("pill_checker.api.v1.medications.get_supabase_client") as mock_med_get,
+    ):
+        mock_auth_create.return_value = mock_client
+        mock_med_get.return_value = mock_client
+
+        yield mock_client
+
+
+@pytest.fixture
+def disable_rate_limiting():
+    """Disable rate limiting for tests."""
+    with patch("pill_checker.core.security.limiter.enabled", False):
+        yield
