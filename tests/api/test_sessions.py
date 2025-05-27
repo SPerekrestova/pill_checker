@@ -1,14 +1,14 @@
 """Tests for session management."""
 
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from src.pill_checker.core.security import setup_security
-from src.pill_checker.services.session_service import get_current_user
+from pill_checker.core.security import setup_security
+from pill_checker.services.session_service import get_current_user
 
 # Test data
 TEST_TOKEN = "test_token"
@@ -22,11 +22,25 @@ TEST_USER_DATA = {
 
 @pytest.fixture
 def mock_auth_service():
-    """Mock Auth service."""
-    with patch("src.pill_checker.services.session_service.get_auth_service") as mock:
+    """Mock Auth service with proper return values."""
+    with patch("pill_checker.services.session_service.get_auth_service") as mock_get:
         service = MagicMock()
-        service.verify_token = MagicMock(return_value=None)
-        mock.return_value = service
+
+        # Configure verify_token to return proper values
+        service.verify_token = MagicMock(return_value=TEST_USER_DATA)
+
+        # Configure the supabase client mock
+        mock_client = MagicMock()
+
+        # Set up the auth.get_user chain to return proper values
+        mock_user = MagicMock()
+        mock_user.user.id = TEST_USER_ID
+        mock_user.user.email = TEST_USER_DATA["email"]
+
+        mock_client.auth.get_user.return_value = mock_user
+        service.supabase = mock_client
+
+        mock_get.return_value = service
         yield service
 
 
@@ -54,9 +68,6 @@ class TestSessionManagement:
 
     def test_protected_route_with_valid_token(self, test_client, mock_auth_service):
         """Test accessing protected route with valid token."""
-        # Mock successful token verification
-        mock_auth_service.verify_token.return_value = TEST_USER_DATA
-
         response = test_client.get(
             "/test/protected", headers={"Authorization": f"Bearer {TEST_TOKEN}"}
         )

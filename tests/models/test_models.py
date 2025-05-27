@@ -3,8 +3,8 @@
 import uuid
 from unittest.mock import MagicMock
 
-from src.pill_checker.models import Medication, Profile
-from src.pill_checker.schemas import (
+from pill_checker.models import Medication, Profile
+from pill_checker.schemas import (
     MedicationCreate,
     MedicationResponse,
     ProfileCreate,

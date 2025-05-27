@@ -6,8 +6,8 @@ from fastapi import FastAPI, Response, status
 from sqlalchemy import text
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from src.pill_checker.core.database import engine
-from src.pill_checker.core.logging_config import logger
+from pill_checker.core.database import engine
+from pill_checker.core.logging_config import logger
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:

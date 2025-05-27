@@ -9,9 +9,9 @@ from fastapi import HTTPException, status
 from supabase import Client, create_client
 from supabase.lib.client_options import ClientOptions
 
-from src.pill_checker.core.config import settings
-from src.pill_checker.core.logging_config import logger
-from src.pill_checker.schemas.profile import ProfileInDB, ProfileUpdate
+from pill_checker.core.config import settings
+from pill_checker.core.logging_config import logger
+from pill_checker.schemas.profile import ProfileInDB, ProfileUpdate
 
 
 class AuthService:

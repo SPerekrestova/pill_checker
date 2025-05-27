@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from src.pill_checker.schemas import (
+from pill_checker.schemas import (
     MedicationCreate,
     MedicationUpdate,
     ProfileCreate,

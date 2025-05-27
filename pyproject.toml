@@ -10,7 +10,7 @@ readme = "README.md"
 authors = [
     {name = "Svetlana Perekrestova", email = "svetlana.perekrestova2@gmail.com"}
 ]
-license = "MIT"
+license = {text = "MIT"}
 requires-python = ">=3.12"
 dependencies = [
     "aiofiles>=0.7.0",
@@ -47,9 +47,17 @@ dev = [
     "pre-commit>=3.5.0",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-mock>=3.0.0",
     "pylint>=3.3.4",
     "ruff>=0.9.6",
 ]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["pill_checker"]
+
+[tool.setuptools.package-data]
+pill_checker = ["static/**/*", "templates/**/*"]
 
 [tool.black]
 line-length = 100
@@ -65,3 +73,12 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
+pythonpath = ["src"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning"
+]
+markers = [
+    "ocr: tests that use the real OCR service (may be slow)"
+]

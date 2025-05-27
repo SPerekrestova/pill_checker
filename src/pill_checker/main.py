@@ -5,12 +5,12 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from src.pill_checker.api.v1 import auth
-from src.pill_checker.api.v1 import medications
-from src.pill_checker.core.config import settings
-from src.pill_checker.core.events import setup_events
-from src.pill_checker.core.security import setup_security
-from src.pill_checker.services import ocr, session_service, auth as auth_service
+from pill_checker.api.v1 import auth
+from pill_checker.api.v1 import medications
+from pill_checker.core.config import settings
+from pill_checker.core.events import setup_events
+from pill_checker.core.security import setup_security
+from pill_checker.services import ocr, session_service, auth as auth_service
 
 # Initialize FastAPI app
 app = FastAPI(
