@@ -118,14 +118,14 @@ class AuthService:
 
     def get_user_profile(self, user_id: UUID) -> Optional[ProfileInDB]:
         try:
-            response = (
-                self.supabase.from_("profiles")
-                .select("*")
-                .eq("id", str(user_id))
-                .single()
-                .execute()
-            )
-            return ProfileInDB(**response.data) if response.data else None
+            response = self.supabase.from_("profiles").select("*").eq("id", str(user_id)).execute()
+            # Check if any data was returned
+            if response.data and len(response.data) > 0:
+                return ProfileInDB(**response.data[0])
+            else:
+                # No profile found, create one
+                logger.info(f"No profile found for user {user_id}, creating one")
+                return self.create_profile(str(user_id))
         except Exception as e:
             logger.error(f"Error fetching user profile: {e}")
             return None
@@ -185,16 +185,12 @@ class AuthService:
         try:
             # First check if profile exists
             existing_profile = (
-                self.supabase.from_("profiles")
-                .select("*")
-                .eq("id", str(user_id))
-                .single()
-                .execute()
+                self.supabase.from_("profiles").select("*").eq("id", str(user_id)).execute()
             )
 
-            if existing_profile.data:
+            if existing_profile.data and len(existing_profile.data) > 0:
                 # Profile exists, return it
-                return ProfileInDB(**existing_profile.data)
+                return ProfileInDB(**existing_profile.data[0])
 
             # Create new profile if it doesn't exist
             data = {
@@ -207,7 +203,7 @@ class AuthService:
             # Insert the profile data
             profile_response = self.supabase.from_("profiles").insert(data).execute()
 
-            if not profile_response.data:
+            if not profile_response.data or len(profile_response.data) == 0:
                 logger.error("Failed to create profile")
                 return None
 

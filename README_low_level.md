@@ -158,7 +158,7 @@ For detailed instructions on working with the local Supabase setup, see [README-
    source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 
    # Install dependencies
-   pip install -r requirements.txt
+   pip install -e ".[dev]" 
    ```
 
 2. **Environment Variables**
