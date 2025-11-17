@@ -16,26 +16,18 @@ def read_items(db: Session = Depends(get_db), user: dict = Depends(get_current_u
 ```
 """
 
-from functools import lru_cache
 from typing import Any, Dict, Generator
 
-from fastapi import Depends, HTTPException, Query, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
+from fastapi import Depends, Query
+from fastapi_users.db import SQLAlchemyUserDatabase
 from sqlalchemy.orm import Session
 
-from pill_checker.core.database import SessionLocal
-from supabase import Client, create_client
-from supabase.lib.client_options import ClientOptions
-
 from pill_checker.core.config import get_settings
-from pill_checker.services.auth import AuthService
+from pill_checker.core.database import SessionLocal
+from pill_checker.models.user import User
 
 # Settings instance
 settings = get_settings()
-
-# OAuth2 scheme for token authentication
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 
 # Database dependencies
@@ -63,124 +55,18 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-# Authentication dependencies
-@lru_cache()
-def get_auth_service() -> AuthService:
+# User database dependency
+async def get_user_db(db: Session = Depends(get_db)) -> SQLAlchemyUserDatabase:
     """
-    Get or create an instance of the Auth service.
-
-    This function uses lru_cache to ensure only one instance is created.
-
-    Returns:
-        AuthService: Initialized authentication service
-    """
-    options = ClientOptions(
-        postgrest_client_timeout=60,
-        storage_client_timeout=120,
-        auto_refresh_token=True,
-    )
-
-    supabase_client: Client = create_client(
-        settings.SUPABASE_URL, settings.SUPABASE_KEY, options=options
-    )
-
-    return AuthService(supabase_client)
-
-
-def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
-    """
-    Validate the access token and get the current user.
-
-    This dependency extracts and validates the JWT token from the request,
-    then returns the user data if the token is valid.
+    Get user database adapter for FastAPI-Users.
 
     Args:
-        token: JWT access token from the Authorization header
+        db: Database session
 
-    Returns:
-        dict: User data including id, email, and profile
-
-    Raises:
-        HTTPException: 401 error if the token is invalid
+    Yields:
+        SQLAlchemyUserDatabase: User database adapter
     """
-    try:
-        auth_service = get_auth_service()
-        user_data = auth_service.verify_token(token)
-
-        if not user_data:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        return user_data
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-
-def get_current_active_user(
-    current_user: Dict[str, Any] = Depends(get_current_user),
-) -> Dict[str, Any]:
-    """
-    Get the current active user.
-
-    This dependency extends get_current_user to check if the user is active.
-    It could be extended to check other conditions (e.g., verified email, not banned).
-
-    Args:
-        current_user: User data from get_current_user
-
-    Returns:
-        dict: User data
-
-    Raises:
-        HTTPException: 400 error if the user is inactive
-    """
-    # Could add additional checks here (e.g., is user active, verified, etc.)
-    if current_user.get("disabled"):
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
-
-
-def get_admin_user(current_user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, Any]:
-    """
-    Check if the current user is an admin.
-
-    Args:
-        current_user: User data from get_current_user
-
-    Returns:
-        dict: User data
-
-    Raises:
-        HTTPException: 403 error if the user is not an admin
-    """
-    if current_user.get("role") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions",
-        )
-    return current_user
-
-
-def get_supabase_client() -> Client:
-    """
-    Get a configured Supabase client instance.
-
-    Returns:
-        Client: Initialized Supabase client
-    """
-    options = ClientOptions(
-        postgrest_client_timeout=60,
-        storage_client_timeout=120,
-        auto_refresh_token=True,
-    )
-
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY, options=options)
+    yield SQLAlchemyUserDatabase(db, User)
 
 
 # Pagination and filtering dependencies

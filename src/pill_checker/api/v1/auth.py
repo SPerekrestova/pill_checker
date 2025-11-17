@@ -1,190 +1,99 @@
-"""Authentication endpoints."""
+"""Authentication endpoints using FastAPI-Users."""
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
-from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel, EmailStr, Field, constr
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
+from pill_checker.api.v1.dependencies import get_db
 from pill_checker.core.logging_config import logger
-from pill_checker.services import session_service
-from pill_checker.services.auth import get_auth_service
+from pill_checker.models.user import User
+from pill_checker.schemas.user import UserCreate, UserRead, UserUpdate
+from pill_checker.services.auth_manager import auth_backend, fastapi_users, current_active_user
+from pill_checker.services.profile_service import ProfileService
 
+# Create router
 router = APIRouter()
 
+# Include FastAPI-Users authentication routes
+# Register endpoint
+router.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    tags=["auth"],
+)
 
-class Token(BaseModel):
-    """Token response model."""
+# Login/logout endpoints
+router.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/jwt",
+    tags=["auth"],
+)
 
-    access_token: str
-    token_type: str = "bearer"
-    expires_in: int = Field(gt=0, description="Token expiration time in seconds")
-    refresh_token: Optional[str] = None
+# Reset password endpoints
+router.include_router(
+    fastapi_users.get_reset_password_router(),
+    tags=["auth"],
+)
 
+# Verify email endpoints
+router.include_router(
+    fastapi_users.get_verify_router(UserRead),
+    tags=["auth"],
+)
 
-class RefreshToken(BaseModel):
-    """Refresh token request model."""
-
-    refresh_token: str = Field(..., min_length=1, description="Valid refresh token")
-
-    @property
-    def token(self):
-        """For backward compatibility."""
-        return self.refresh_token
-
-
-class UserCreate(BaseModel):
-    """User registration model."""
-
-    email: EmailStr
-    password: str = Field(
-        ...,
-        min_length=8,
-        max_length=72,
-        description="Password must be between 8 and 72 characters and contain at least one letter and one number",
-        pattern="^[A-Za-z0-9@$!%*#?&]*[A-Za-z][A-Za-z0-9@$!%*#?&]*[0-9][A-Za-z0-9@$!%*#?&]*$|^[A-Za-z0-9@$!%*#?&]*[0-9][A-Za-z0-9@$!%*#?&]*[A-Za-z][A-Za-z0-9@$!%*#?&]*$",
-    )
-    password_confirm: str = Field(..., description="Must match password field")
-    username: Optional[constr(min_length=3, max_length=50)] = Field(
-        None, description="Username between 3 and 50 characters"
-    )
+# User management endpoints
+router.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/users",
+    tags=["users"],
+)
 
 
-class ProfileCreate(BaseModel):
-    """Profile creation model."""
+@router.post("/register-with-profile", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+async def register_with_profile(
+    user_create: UserCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    Register a new user and automatically create their profile.
 
-    username: constr(min_length=3, max_length=50) = Field(
-        ..., description="Username between 3 and 50 characters"
-    )
-
-
-class PasswordReset(BaseModel):
-    """Password reset model."""
-
-    token: str = Field(..., min_length=1, description="Valid reset token")
-    new_password: str = Field(
-        ...,
-        min_length=8,
-        max_length=72,
-        description="Password must be between 8 and 72 characters and contain at least one letter and one number",
-        pattern="^[A-Za-z0-9@$!%*#?&]*[A-Za-z][A-Za-z0-9@$!%*#?&]*[0-9][A-Za-z0-9@$!%*#?&]*$|^[A-Za-z0-9@$!%*#?&]*[0-9][A-Za-z0-9@$!%*#?&]*[A-Za-z][A-Za-z0-9@$!%*#?&]*$",
-    )
-    new_password_confirm: str = Field(..., description="Must match new_password field")
-
-
-class EmailRequest(BaseModel):
-    """Email request model."""
-
-    email: EmailStr
-
-
-@router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate):
-    """Register a new user."""
-    if user_data.password != user_data.password_confirm:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match"
-        )
-
+    This is a custom endpoint that extends the default registration
+    to automatically create a user profile.
+    """
     try:
-        service = get_auth_service()
-        result = service.create_user_with_profile(
-            email=str(user_data.email),
-            password=user_data.password,
-            username=user_data.username,
-        )
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Registration failed"
-            )
+        # Use FastAPI-Users to register the user
+        from pill_checker.services.auth_manager import get_user_db, get_user_manager
 
-        return {
-            "message": "Registration successful. You can now login.",
-            "user_id": str(result.id),
-        }
-    except HTTPException:
-        raise
+        user_db_gen = get_user_db(db)
+        user_db = await user_db_gen.__anext__()
+
+        user_manager_gen = get_user_manager(user_db)
+        user_manager = await user_manager_gen.__anext__()
+
+        # Create user
+        user = await user_manager.create(user_create)
+
+        # Create profile
+        profile_service = ProfileService(db)
+        username = user_create.username if hasattr(user_create, 'username') else None
+        profile = profile_service.create_profile(user.id, username)
+
+        if not profile:
+            logger.warning(f"Profile creation failed for user {user.id}")
+
+        return UserRead.model_validate(user)
+
     except Exception as e:
-        logger.error(f"Registration error: {e}")
+        logger.error(f"Registration with profile error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error during registration",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
         )
 
 
-@router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """Login user and return access token."""
-    try:
-        service = get_auth_service()
-        try:
-            success, result = service.authenticate_user(
-                email=form_data.username, password=form_data.password
-            )
-
-            if not success or not result:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Incorrect email or password",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-
-            return {
-                "access_token": result["access_token"],
-                "token_type": "bearer",
-                "expires_in": 3600,  # 1 hour
-                "refresh_token": result["refresh_token"],
-            }
-        except Exception as auth_error:
-            logger.error(f"Login error: {auth_error}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Login error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error during login",
-        )
-
-
-@router.post("/logout")
-async def logout(response: Response):
-    """Logout current user."""
-    try:
-        session_service.logout_user()
-        response.delete_cookie("session")
-        return {"message": "Successfully logged out"}
-    except Exception as e:
-        logger.error(f"Logout error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error during logout",
-        )
-
-
-@router.post("/refresh-token", response_model=Token)
-async def refresh_token(token_data: RefreshToken):
-    """Refresh access token using refresh token."""
-    try:
-        service = get_auth_service()
-        session_dict = service.refresh_session(token_data.token)
-        return {
-            "access_token": session_dict["access_token"],
-            "token_type": "bearer",
-            "expires_in": 3600,  # 1 hour
-            "refresh_token": session_dict["refresh_token"],
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Token refresh error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+@router.get("/me", response_model=UserRead)
+async def get_current_user_info(
+    user: User = Depends(current_active_user),
+):
+    """Get current user information."""
+    return UserRead.model_validate(user)
