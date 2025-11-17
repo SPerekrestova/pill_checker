@@ -18,9 +18,11 @@ This project is not just a tech challenge – it's a passion project that shows 
 - **Web Framework:** [FastAPI](https://fastapi.tiangolo.com) - chosen for its lightweight nature and simplicity
 - **Containerization:** [Docker](https://www.docker.com)
 - **Cloud Hosting:** Currently running locally, with cloud deployment planned for the future once resource optimization is achieved.
-- **Database & Auth:** Using local [Supabase](https://supabase.com) instance for a real-time database and user authentication, making the project fully self-contained and easy to deploy locally.
+- **Database:** PostgreSQL with [SQLAlchemy](https://www.sqlalchemy.org/) ORM for robust data management
+- **Authentication:** [FastAPI-Users](https://fastapi-users.github.io/fastapi-users/) for secure JWT-based authentication
+- **Storage:** Local filesystem-based storage for medication scans with plans for cloud integration
 - **Local Development:** Comprehensive setup instructions and configuration files are provided for easy local deployment and development.
-- **AI & NLP:** Leveraging large language models along with pipelines for image text extraction using the [en_ner_bc5cdr_md model from SciSpacy](https://github.com/allenai/scispacy) paired with the [RxNorm linker](https://www.nlm.nih.gov/research/umls/rxnorm/index.html).
+- **AI & NLP:** Leveraging [BiomedNER](https://github.com/YOUR_REPO/biomed-ner) for medical entity recognition along with pipelines for image text extraction using OCR technology.
 
 ## Challenges & Learnings
 
@@ -29,7 +31,8 @@ Building PillChecker was a journey full of learning and experimentation. Here ar
 - Integrating image processing and text extraction to reliably scan medicine packs.
 - Optimizing performance while managing the heavy memory needs of large language models and smart pipelines.
 - Balancing between system performance and resource consumption for local deployment.
-- Implementing a real-time database and authentication system using Supabase.
+- Implementing custom authentication with FastAPI-Users and migrating from Supabase to a fully self-managed solution.
+- Designing a scalable storage system that can transition from local filesystem to cloud storage.
 
 ## Future Enhancements
 

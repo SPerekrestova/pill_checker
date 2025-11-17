@@ -38,16 +38,9 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = "54322"
     POSTGRES_DB: str = "postgres"
 
-    # Supabase Settings
-    SUPABASE_URL: str = "http://localhost:8000"
-    SUPABASE_KEY: str = "test-key"
-    SUPABASE_JWT_SECRET: str = "test-jwt-secret"
-    SUPABASE_BUCKET_NAME: str = "scans"
-    SUPABASE_ANON_KEY: str = None
-    SUPABASE_SERVICE_ROLE_KEY: str = None
-
-    # Storage
-    STORAGE_URL: Optional[str] = None
+    # Storage Settings
+    STORAGE_PATH: str = "./storage"
+    STORAGE_BASE_URL: str = "http://localhost:8000"
 
     # Logging
     LOG_LEVEL: str = "INFO"
@@ -95,33 +88,6 @@ class Settings(BaseSettings):
         if not v:
             raise ValueError("SECRET_KEY environment variable is not set")
         return v
-
-    @validator("SUPABASE_URL", "SUPABASE_KEY", pre=True)
-    def validate_supabase_settings(cls, v, field):
-        """Validate that required Supabase settings are set."""
-        if not v:
-            raise ValueError(f"{field.name} environment variable is not set")
-        return v
-
-    @validator(
-        "SUPABASE_JWT_SECRET",
-        "SUPABASE_ANON_KEY",
-        "SUPABASE_SERVICE_ROLE_KEY",
-        pre=True,
-    )
-    def validate_optional_supabase_settings(cls, v, field):
-        """Validate optional Supabase settings."""
-        # These are not strictly required for all functionalities
-        if not v:
-            return os.getenv(field.name, None)
-        return v
-
-    @property
-    def storage_url(self) -> str:
-        """Get storage URL."""
-        if not self.STORAGE_URL:
-            return f"{self.SUPABASE_URL}/storage/v1/s3/{self.SUPABASE_BUCKET_NAME}"
-        return self.STORAGE_URL
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

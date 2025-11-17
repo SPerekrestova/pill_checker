@@ -3,9 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-from supabase import Client, create_client
 
-from pill_checker.core.config import settings
 from pill_checker.core.database import get_db
 from pill_checker.core.logging_config import logger
 from pill_checker.models.medication import Medication
@@ -18,19 +16,9 @@ from pill_checker.services.biomed_ner_client import get_ner_client, MedicalNERCl
 from pill_checker.services.medication_processing import process_medication_text
 from pill_checker.services.ocr import get_ocr_client
 from pill_checker.services.session_service import get_current_user
+from pill_checker.services.storage import get_storage_service
 
 router = APIRouter()
-
-# Lazy initialization of Supabase client
-_supabase_client = None
-
-
-def get_supabase_client() -> Client:
-    """Get or create Supabase client instance."""
-    global _supabase_client
-    if _supabase_client is None:
-        _supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-    return _supabase_client
 
 
 @router.post("/upload", response_model=MedicationResponse)
@@ -55,22 +43,19 @@ async def upload_medication(
         MedicationResponse with extracted medication details
     """
     try:
-        # Get Supabase client
-        supabase = get_supabase_client()
+        # Get storage service
+        storage_service = get_storage_service()
 
-        # Upload image to Supabase storage
+        # Upload image to local storage
         file_path = f"medications/{current_user['id']}/{image.filename}"
 
         file_content = await image.read()
         logger.info(f"Processing medication image: {file_path}")
 
-        # Upload to storage and check response
-        supabase.storage.from_(settings.SUPABASE_BUCKET_NAME).upload(
-            file_path, file_content, file_options={"content-type": image.content_type}
+        # Upload to storage
+        public_url = await storage_service.upload_file(
+            file_content, file_path, image.content_type
         )
-
-        # Get public URL
-        public_url = f"{settings.storage_url}/{file_path}"
 
         # Step 1: Extract text with OCR
         logger.info("Extracting text with OCR...")
