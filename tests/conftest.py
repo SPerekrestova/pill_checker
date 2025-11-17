@@ -27,11 +27,10 @@ else:
     os.environ.update(
         {
             "APP_ENV": "testing",
-            "SECRET_KEY": "test-secret-key",
-            "SUPABASE_URL": "http://localhost:8000",
-            "SUPABASE_KEY": "test-key",
-            "SUPABASE_SERVICE_ROLE_KEY": "test-service-role-key",
+            "SECRET_KEY": "test-secret-key-for-testing-min-32-chars",
             "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/test_db",
+            "STORAGE_PATH": "./test_storage",
+            "STORAGE_BASE_URL": "http://localhost:8000",
             "SKIP_REAL_OCR_TESTS": "True",
         }
     )
@@ -175,20 +174,49 @@ def mock_ocr_service():
         yield None
 
 
+@pytest.fixture
+def mock_storage_service():
+    """Mock storage service for tests."""
+    mock_service = MagicMock()
+    mock_service.upload_file = MagicMock(return_value="/storage/test/file.jpg")
+    mock_service.download_file = MagicMock(return_value=b"test file content")
+    mock_service.delete_file = MagicMock(return_value=True)
+    mock_service.get_public_url = MagicMock(return_value="/storage/test/file.jpg")
+    return mock_service
+
+
+@pytest.fixture
+def mock_user():
+    """Mock authenticated user for tests."""
+    from pill_checker.models.user import User
+
+    user = User(
+        id=uuid.uuid4(),
+        email="test@example.com",
+        hashed_password="$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYqOjKq9n8i",
+        is_active=True,
+        is_superuser=False,
+        is_verified=True,
+    )
+    return user
+
+
 @pytest.fixture(autouse=True)
-def mock_supabase_client():
-    """Mock Supabase client for all tests."""
-    mock_client = MagicMock()
+def mock_auth_dependencies():
+    """Mock authentication dependencies for all tests."""
+    from pill_checker.models.user import User
 
-    # Mock both the auth service and medications API
-    with (
-        patch("pill_checker.services.auth.create_client") as mock_auth_create,
-        patch("pill_checker.api.v1.medications.get_supabase_client") as mock_med_get,
-    ):
-        mock_auth_create.return_value = mock_client
-        mock_med_get.return_value = mock_client
+    mock_user = User(
+        id=uuid.uuid4(),
+        email="test@example.com",
+        hashed_password="hashed",
+        is_active=True,
+        is_superuser=False,
+        is_verified=True,
+    )
 
-        yield mock_client
+    with patch("pill_checker.services.auth_manager.current_active_user", return_value=mock_user):
+        yield mock_user
 
 
 @pytest.fixture

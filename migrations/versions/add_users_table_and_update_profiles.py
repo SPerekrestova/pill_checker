@@ -1,7 +1,7 @@
 """Add users table and update profiles
 
 Revision ID: add_users_profiles
-Revises: rls_policies
+Revises: consolidated_schema
 Create Date: 2025-11-17 18:00:00.000000
 
 """
@@ -14,7 +14,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "add_users_profiles"
-down_revision: Union[str, None] = "rls_policies"
+down_revision: Union[str, None] = "consolidated_schema"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
