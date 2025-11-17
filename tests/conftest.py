@@ -196,3 +196,49 @@ def disable_rate_limiting():
     """Disable rate limiting for tests."""
     with patch("pill_checker.core.security.limiter.enabled", False):
         yield
+
+
+@pytest.fixture
+def sample_ner_entities():
+    """Sample NER entities response for testing."""
+    return [
+        {
+            "text": "Ibuprofen",
+            "label": "CHEMICAL",
+            "start": 0,
+            "end": 9,
+            "cui": "C0020740",
+            "canonical_name": "Ibuprofen",
+            "aliases": ["Advil", "Motrin", "Nurofen"],
+            "definition": "A nonsteroidal anti-inflammatory drug",
+        },
+        {
+            "text": "pain",
+            "label": "DISEASE",
+            "start": 30,
+            "end": 34,
+            "cui": "C0030193",
+            "canonical_name": "Pain",
+            "definition": "An unpleasant sensory experience",
+        },
+    ]
+
+
+@pytest.fixture
+def mock_ner_client(sample_ner_entities):
+    """Mock NER client for testing."""
+    mock_client = MagicMock()
+    mock_client.extract_entities.return_value = sample_ner_entities
+    mock_client.find_active_ingredients.return_value = ["Ibuprofen"]
+    mock_client.find_chemicals.return_value = [sample_ner_entities[0]]
+    mock_client.find_diseases.return_value = [sample_ner_entities[1]]
+    return mock_client
+
+
+@pytest.fixture(autouse=True)
+def mock_ner_service(mock_ner_client):
+    """Mock the NER service globally for tests."""
+    with patch(
+        "pill_checker.services.biomed_ner_client.get_ner_client", return_value=mock_ner_client
+    ):
+        yield mock_ner_client
