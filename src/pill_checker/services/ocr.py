@@ -92,6 +92,3 @@ def get_ocr_client(languages=None):
     if _ocr_client is None:
         _ocr_client = EasyOCRClient(languages=languages)
     return _ocr_client
-
-
-get_ocr_client()

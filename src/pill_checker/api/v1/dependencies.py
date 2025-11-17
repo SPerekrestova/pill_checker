@@ -16,10 +16,10 @@ def read_items(db: Session = Depends(get_db), user: dict = Depends(get_current_u
 ```
 """
 
-from typing import Any, Dict, Generator
+from typing import Dict, Generator
 
 from fastapi import Depends, Query
-from fastapi_users.db import SQLAlchemyUserDatabase
+from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy.orm import Session
 
 from pill_checker.core.config import get_settings

@@ -1,6 +1,5 @@
-import os
 from functools import lru_cache
-from typing import List, Optional
+from typing import List
 
 from dotenv import load_dotenv
 from pydantic.v1 import BaseSettings, validator
@@ -91,12 +90,10 @@ class Settings(BaseSettings):
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        database_url = f"postgresql+psycopg2://{
-            self.POSTGRES_USER}:{
-            self.POSTGRES_PASSWORD}@{
-            self.POSTGRES_HOST}:{
-            self.POSTGRES_PORT}/{
-                self.POSTGRES_DB}"
+        database_url = (
+            f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
         return database_url
 
     class Config:

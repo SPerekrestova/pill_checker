@@ -10,7 +10,7 @@ from pill_checker.api.v1 import medications
 from pill_checker.core.config import settings
 from pill_checker.core.events import setup_events
 from pill_checker.core.security import setup_security
-from pill_checker.services import ocr, session_service, auth as auth_service
+from pill_checker.services import ocr, session_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -35,7 +35,6 @@ setup_events(app)
 class Services:
     ocr_service = ocr
     session_service = session_service
-    auth_service = auth_service
 
 
 app.services = Services()

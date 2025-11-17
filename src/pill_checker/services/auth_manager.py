@@ -10,7 +10,7 @@ from fastapi_users.authentication import (
     BearerTransport,
     JWTStrategy,
 )
-from fastapi_users.db import SQLAlchemyUserDatabase
+from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 
 from pill_checker.core.config import settings
 from pill_checker.core.logging_config import logger
