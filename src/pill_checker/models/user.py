@@ -1,9 +1,8 @@
 """User model for FastAPI-Users authentication."""
 
-import uuid
 from typing import TYPE_CHECKING, Optional
 
-from fastapi_users.db import SQLAlchemyBaseUserTableUUID
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,9 +29,7 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     __tablename__ = "users"
 
     # Override email to add index
-    email: Mapped[str] = mapped_column(
-        String(length=320), unique=True, index=True, nullable=False
-    )
+    email: Mapped[str] = mapped_column(String(length=320), unique=True, index=True, nullable=False)
 
     # Relationship to profile (one-to-one)
     profile: Mapped[Optional["Profile"]] = relationship(
