@@ -44,17 +44,18 @@ def extract_title(
 
     Args:
         text: OCR text from medication label
-        entities: List of chemical entities from NER
+        entities: List of entities from NER (with umls_entities structure)
         max_length: Maximum length for title
 
     Returns:
         Medication title/name
     """
-    # Try to get canonical name from first chemical entity
+    # Try to get canonical name from first entity with UMLS data
     if entities:
         for entity in entities:
-            if entity.get("label") == "CHEMICAL":
-                canonical = entity.get("canonical_name") or entity.get("text")
+            umls_entities = entity.get("umls_entities", [])
+            if umls_entities:
+                canonical = umls_entities[0].get("canonical_name")
                 if canonical:
                     # Add dosage if available
                     dosage = extract_dosage(text)
@@ -83,16 +84,20 @@ def format_active_ingredients(entities: List[Dict[str, Any]]) -> str:
     Format active ingredients from entity list into a string.
 
     Args:
-        entities: List of all entities from NER
+        entities: List of entities from NER (with umls_entities structure)
 
     Returns:
         Comma-separated string of unique active ingredients
     """
-    chemicals = [
-        entity.get("canonical_name") or entity.get("text")
-        for entity in entities
-        if entity.get("label") == "CHEMICAL"
-    ]
+    chemicals = []
+
+    for entity in entities:
+        umls_entities = entity.get("umls_entities", [])
+        if umls_entities:
+            # Get canonical name from first UMLS entity
+            canonical = umls_entities[0].get("canonical_name")
+            if canonical:
+                chemicals.append(canonical)
 
     # Remove duplicates while preserving order
     seen = set()
@@ -113,7 +118,7 @@ def extract_prescription_details(
 
     Args:
         text: OCR text from medication label
-        entities: List of entities from NER
+        entities: List of entities from NER (with umls_entities structure)
 
     Returns:
         Dictionary with prescription metadata
@@ -145,19 +150,17 @@ def extract_prescription_details(
             details["expiry_date"] = match.group(1).strip()
             break
 
-    # Add disease entities if any
-    diseases = [
-        entity.get("canonical_name") or entity.get("text")
-        for entity in entities
-        if entity.get("label") == "DISEASE"
-    ]
-    if diseases:
-        details["related_conditions"] = diseases
+    # Add entity metadata
+    entity_names = []
+    for entity in entities:
+        umls_entities = entity.get("umls_entities", [])
+        if umls_entities:
+            canonical = umls_entities[0].get("canonical_name")
+            if canonical:
+                entity_names.append(canonical)
 
-    # Add CUI identifiers for interoperability
-    cuis = [entity.get("cui") for entity in entities if entity.get("cui")]
-    if cuis:
-        details["cui_identifiers"] = cuis
+    if entity_names:
+        details["detected_entities"] = entity_names
 
     return details
 

@@ -207,16 +207,24 @@ class TestMedicationUploadIntegration:
         # Mock NER to return multiple chemicals
         mock_ner_client.extract_entities.return_value = [
             {
-                "text": "Amoxicillin",
-                "label": "CHEMICAL",
-                "canonical_name": "Amoxicillin",
-                "cui": "C0002645",
+                "text": "amoxicillin",
+                "umls_entities": [
+                    {
+                        "canonical_name": "Amoxicillin",
+                        "definition": "Antibiotic...",
+                        "aliases": [],
+                    }
+                ],
             },
             {
-                "text": "Clavulanic Acid",
-                "label": "CHEMICAL",
-                "canonical_name": "Clavulanic Acid",
-                "cui": "C0054066",
+                "text": "clavulanic acid",
+                "umls_entities": [
+                    {
+                        "canonical_name": "Clavulanic Acid",
+                        "definition": "Beta-lactamase inhibitor...",
+                        "aliases": [],
+                    }
+                ],
             },
         ]
 
@@ -234,10 +242,10 @@ class TestMedicationUploadIntegration:
         assert "Amoxicillin" in data["title"]
         assert data["dosage"] == "500mg"
 
-        # Verify CUIs are stored
-        assert "cui_identifiers" in data["prescription_details"]
-        assert "C0002645" in data["prescription_details"]["cui_identifiers"]
-        assert "C0054066" in data["prescription_details"]["cui_identifiers"]
+        # Verify entities are stored
+        assert "detected_entities" in data["prescription_details"]
+        assert "Amoxicillin" in data["prescription_details"]["detected_entities"]
+        assert "Clavulanic Acid" in data["prescription_details"]["detected_entities"]
 
     @patch("pill_checker.api.v1.medications.get_current_user")
     @patch("pill_checker.api.v1.medications.get_db")
@@ -278,19 +286,22 @@ class TestMedicationUploadIntegration:
         # Mock NER to return chemical and diseases
         mock_ner_client.extract_entities.return_value = [
             {
-                "text": "Aspirin",
-                "label": "CHEMICAL",
-                "canonical_name": "Aspirin",
+                "text": "aspirin",
+                "umls_entities": [
+                    {"canonical_name": "Aspirin", "definition": "...", "aliases": []}
+                ],
             },
             {
                 "text": "headache",
-                "label": "DISEASE",
-                "canonical_name": "Headache",
+                "umls_entities": [
+                    {"canonical_name": "Headache", "definition": "...", "aliases": []}
+                ],
             },
             {
                 "text": "fever",
-                "label": "DISEASE",
-                "canonical_name": "Fever",
+                "umls_entities": [
+                    {"canonical_name": "Fever", "definition": "...", "aliases": []}
+                ],
             },
         ]
 
@@ -302,10 +313,11 @@ class TestMedicationUploadIntegration:
         assert response.status_code == 200
         data = response.json()
 
-        # Verify disease entities are stored in prescription details
-        assert "related_conditions" in data["prescription_details"]
-        assert "Headache" in data["prescription_details"]["related_conditions"]
-        assert "Fever" in data["prescription_details"]["related_conditions"]
+        # Verify all entities are stored in prescription details
+        assert "detected_entities" in data["prescription_details"]
+        assert "Aspirin" in data["prescription_details"]["detected_entities"]
+        assert "Headache" in data["prescription_details"]["detected_entities"]
+        assert "Fever" in data["prescription_details"]["detected_entities"]
 
     @patch("pill_checker.api.v1.medications.get_current_user")
     def test_upload_medication_unauthorized(self, mock_get_user, test_client, sample_medication_image):

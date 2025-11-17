@@ -200,26 +200,27 @@ def disable_rate_limiting():
 
 @pytest.fixture
 def sample_ner_entities():
-    """Sample NER entities response for testing."""
+    """Sample NER entities response for testing (actual API structure)."""
     return [
         {
-            "text": "Ibuprofen",
-            "label": "CHEMICAL",
-            "start": 0,
-            "end": 9,
-            "cui": "C0020740",
-            "canonical_name": "Ibuprofen",
-            "aliases": ["Advil", "Motrin", "Nurofen"],
-            "definition": "A nonsteroidal anti-inflammatory drug",
+            "text": "ibuprofen",
+            "umls_entities": [
+                {
+                    "canonical_name": "Ibuprofen",
+                    "definition": "A nonsteroidal anti-inflammatory drug",
+                    "aliases": ["Advil", "Motrin", "Nurofen"],
+                }
+            ],
         },
         {
             "text": "pain",
-            "label": "DISEASE",
-            "start": 30,
-            "end": 34,
-            "cui": "C0030193",
-            "canonical_name": "Pain",
-            "definition": "An unpleasant sensory experience",
+            "umls_entities": [
+                {
+                    "canonical_name": "Pain",
+                    "definition": "An unpleasant sensory experience",
+                    "aliases": [],
+                }
+            ],
         },
     ]
 
@@ -229,9 +230,8 @@ def mock_ner_client(sample_ner_entities):
     """Mock NER client for testing."""
     mock_client = MagicMock()
     mock_client.extract_entities.return_value = sample_ner_entities
-    mock_client.find_active_ingredients.return_value = ["Ibuprofen"]
-    mock_client.find_chemicals.return_value = [sample_ner_entities[0]]
-    mock_client.find_diseases.return_value = [sample_ner_entities[1]]
+    mock_client.find_active_ingredients.return_value = ["Ibuprofen", "Pain"]
+    mock_client.get_entity_details.return_value = sample_ner_entities
     return mock_client
 
 

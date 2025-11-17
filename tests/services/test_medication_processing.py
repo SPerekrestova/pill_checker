@@ -50,9 +50,14 @@ class TestExtractTitle:
         text = "Ibuprofen 200mg tablets take twice daily"
         entities = [
             {
-                "text": "Ibuprofen",
-                "label": "CHEMICAL",
-                "canonical_name": "Ibuprofen",
+                "text": "ibuprofen",
+                "umls_entities": [
+                    {
+                        "canonical_name": "Ibuprofen",
+                        "definition": "...",
+                        "aliases": [],
+                    }
+                ],
             }
         ]
 
@@ -64,9 +69,14 @@ class TestExtractTitle:
         text = "Advil 200mg"
         entities = [
             {
-                "text": "Advil",
-                "label": "CHEMICAL",
-                "canonical_name": "Ibuprofen",
+                "text": "advil",
+                "umls_entities": [
+                    {
+                        "canonical_name": "Ibuprofen",
+                        "definition": "...",
+                        "aliases": ["Advil"],
+                    }
+                ],
             }
         ]
 
@@ -78,9 +88,14 @@ class TestExtractTitle:
         text = "Paracetamol tablets"
         entities = [
             {
-                "text": "Paracetamol",
-                "label": "CHEMICAL",
-                "canonical_name": "Acetaminophen",
+                "text": "paracetamol",
+                "umls_entities": [
+                    {
+                        "canonical_name": "Acetaminophen",
+                        "definition": "...",
+                        "aliases": [],
+                    }
+                ],
             }
         ]
 
@@ -117,15 +132,15 @@ class TestExtractTitle:
         result = extract_title(text, entities, max_length=50)
         assert len(result) <= 50
 
-    def test_extract_title_ignores_non_chemical(self):
-        """Test that non-CHEMICAL entities are ignored."""
+    def test_extract_title_empty_umls(self):
+        """Test fallback when entity has no umls_entities."""
         text = "Headache medication"
         entities = [
-            {"text": "Headache", "label": "DISEASE"},
+            {"text": "Headache", "umls_entities": []},
         ]
 
         result = extract_title(text, entities)
-        # Should fallback since no CHEMICAL entities
+        # Should fallback since no UMLS entities with canonical names
         assert result is not None
 
 
@@ -136,9 +151,8 @@ class TestFormatActiveIngredients:
         """Test formatting single active ingredient."""
         entities = [
             {
-                "text": "Ibuprofen",
-                "label": "CHEMICAL",
-                "canonical_name": "Ibuprofen",
+                "text": "ibuprofen",
+                "umls_entities": [{"canonical_name": "Ibuprofen", "definition": "...", "aliases": []}],
             }
         ]
 
@@ -149,14 +163,16 @@ class TestFormatActiveIngredients:
         """Test formatting multiple active ingredients."""
         entities = [
             {
-                "text": "Amoxicillin",
-                "label": "CHEMICAL",
-                "canonical_name": "Amoxicillin",
+                "text": "amoxicillin",
+                "umls_entities": [
+                    {"canonical_name": "Amoxicillin", "definition": "...", "aliases": []}
+                ],
             },
             {
-                "text": "Clavulanic acid",
-                "label": "CHEMICAL",
-                "canonical_name": "Clavulanic Acid",
+                "text": "clavulanic acid",
+                "umls_entities": [
+                    {"canonical_name": "Clavulanic Acid", "definition": "...", "aliases": []}
+                ],
             },
         ]
 
@@ -167,25 +183,26 @@ class TestFormatActiveIngredients:
         """Test that duplicate ingredients are removed."""
         entities = [
             {
-                "text": "Ibuprofen",
-                "label": "CHEMICAL",
-                "canonical_name": "Ibuprofen",
+                "text": "ibuprofen",
+                "umls_entities": [{"canonical_name": "Ibuprofen", "definition": "...", "aliases": []}],
             },
             {
                 "text": "ibuprofen",
-                "label": "CHEMICAL",
-                "canonical_name": "Ibuprofen",
+                "umls_entities": [{"canonical_name": "Ibuprofen", "definition": "...", "aliases": []}],
             },
         ]
 
         result = format_active_ingredients(entities)
         assert result == "Ibuprofen"
 
-    def test_format_ignores_non_chemicals(self):
-        """Test that non-CHEMICAL entities are ignored."""
+    def test_format_ignores_empty_umls(self):
+        """Test that entities without UMLS data are ignored."""
         entities = [
-            {"text": "Ibuprofen", "label": "CHEMICAL", "canonical_name": "Ibuprofen"},
-            {"text": "headache", "label": "DISEASE"},
+            {
+                "text": "ibuprofen",
+                "umls_entities": [{"canonical_name": "Ibuprofen", "definition": "...", "aliases": []}],
+            },
+            {"text": "headache", "umls_entities": []},
         ]
 
         result = format_active_ingredients(entities)
@@ -196,14 +213,14 @@ class TestFormatActiveIngredients:
         result = format_active_ingredients([])
         assert result == ""
 
-    def test_format_uses_text_fallback(self):
-        """Test fallback to text when canonical_name is missing."""
+    def test_format_empty_umls_entities(self):
+        """Test handling entities with empty umls_entities."""
         entities = [
-            {"text": "Aspirin", "label": "CHEMICAL"},
+            {"text": "aspirin", "umls_entities": []},
         ]
 
         result = format_active_ingredients(entities)
-        assert result == "Aspirin"
+        assert result == ""
 
 
 class TestExtractPrescriptionDetails:
@@ -253,39 +270,24 @@ class TestExtractPrescriptionDetails:
             details = extract_prescription_details(text, entities=[])
             assert "expiry_date" in details
 
-    def test_extract_related_conditions(self):
-        """Test extracting disease entities."""
+    def test_extract_detected_entities(self):
+        """Test extracting detected entities."""
         text = "For pain and fever"
         entities = [
-            {"text": "pain", "label": "DISEASE", "canonical_name": "Pain"},
-            {"text": "fever", "label": "DISEASE", "canonical_name": "Fever"},
-        ]
-
-        details = extract_prescription_details(text, entities)
-        assert "related_conditions" in details
-        assert "Pain" in details["related_conditions"]
-        assert "Fever" in details["related_conditions"]
-
-    def test_extract_cui_identifiers(self):
-        """Test extracting CUI identifiers."""
-        text = "Ibuprofen for pain"
-        entities = [
-            {
-                "text": "Ibuprofen",
-                "label": "CHEMICAL",
-                "cui": "C0020740",
-            },
             {
                 "text": "pain",
-                "label": "DISEASE",
-                "cui": "C0030193",
+                "umls_entities": [{"canonical_name": "Pain", "definition": "...", "aliases": []}],
+            },
+            {
+                "text": "fever",
+                "umls_entities": [{"canonical_name": "Fever", "definition": "...", "aliases": []}],
             },
         ]
 
         details = extract_prescription_details(text, entities)
-        assert "cui_identifiers" in details
-        assert "C0020740" in details["cui_identifiers"]
-        assert "C0030193" in details["cui_identifiers"]
+        assert "detected_entities" in details
+        assert "Pain" in details["detected_entities"]
+        assert "Fever" in details["detected_entities"]
 
     def test_extract_empty_text(self):
         """Test with minimal information."""
@@ -301,16 +303,14 @@ class TestProcessMedicationText:
         ocr_text = "Ibuprofen 200mg tablets. Take 2 tablets twice daily for pain. Exp: 12/2025"
         entities = [
             {
-                "text": "Ibuprofen",
-                "label": "CHEMICAL",
-                "canonical_name": "Ibuprofen",
-                "cui": "C0020740",
+                "text": "ibuprofen",
+                "umls_entities": [
+                    {"canonical_name": "Ibuprofen", "definition": "...", "aliases": []}
+                ],
             },
             {
                 "text": "pain",
-                "label": "DISEASE",
-                "canonical_name": "Pain",
-                "cui": "C0030193",
+                "umls_entities": [{"canonical_name": "Pain", "definition": "...", "aliases": []}],
             },
         ]
 
@@ -318,11 +318,12 @@ class TestProcessMedicationText:
 
         assert "Ibuprofen" in title
         assert "200mg" in title
-        assert ingredients == "Ibuprofen"
+        assert "Ibuprofen" in ingredients
+        assert "Pain" in ingredients
         assert dosage == "200mg"
         assert "frequency" in details
         assert "expiry_date" in details
-        assert "cui_identifiers" in details
+        assert "detected_entities" in details
 
     def test_process_minimal_medication(self):
         """Test processing with minimal information."""
@@ -341,14 +342,16 @@ class TestProcessMedicationText:
         ocr_text = "Amoxicillin 500mg and Clavulanic Acid 125mg tablets"
         entities = [
             {
-                "text": "Amoxicillin",
-                "label": "CHEMICAL",
-                "canonical_name": "Amoxicillin",
+                "text": "amoxicillin",
+                "umls_entities": [
+                    {"canonical_name": "Amoxicillin", "definition": "...", "aliases": []}
+                ],
             },
             {
-                "text": "Clavulanic Acid",
-                "label": "CHEMICAL",
-                "canonical_name": "Clavulanic Acid",
+                "text": "clavulanic acid",
+                "umls_entities": [
+                    {"canonical_name": "Clavulanic Acid", "definition": "...", "aliases": []}
+                ],
             },
         ]
 

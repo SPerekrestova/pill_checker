@@ -22,33 +22,28 @@ class TestMedicalNERClient:
 
     @pytest.fixture
     def sample_entities_response(self):
-        """Sample response from BiomedNER API."""
+        """Sample response from BiomedNER API (actual structure)."""
         return {
             "entities": [
                 {
-                    "text": "Ibuprofen",
-                    "label": "CHEMICAL",
-                    "start": 0,
-                    "end": 9,
-                    "cui": "C0020740",
-                    "canonical_name": "Ibuprofen",
-                    "aliases": ["Advil", "Motrin", "Nurofen"],
-                    "definition": "A nonsteroidal anti-inflammatory drug",
-                },
-                {
-                    "text": "200mg",
-                    "label": "DOSAGE",
-                    "start": 10,
-                    "end": 15,
+                    "text": "ibuprofen",
+                    "umls_entities": [
+                        {
+                            "canonical_name": "Ibuprofen",
+                            "definition": "A nonsteroidal anti-inflammatory drug",
+                            "aliases": ["Advil", "Motrin", "Nurofen"],
+                        }
+                    ],
                 },
                 {
                     "text": "headache",
-                    "label": "DISEASE",
-                    "start": 30,
-                    "end": 38,
-                    "cui": "C0018681",
-                    "canonical_name": "Headache",
-                    "definition": "Pain in the head region",
+                    "umls_entities": [
+                        {
+                            "canonical_name": "Headache",
+                            "definition": "Pain in the head region",
+                            "aliases": [],
+                        }
+                    ],
                 },
             ]
         }
@@ -96,10 +91,10 @@ class TestMedicalNERClient:
         assert call_args[1]["timeout"] == 30
 
         # Verify entities returned
-        assert len(entities) == 3
-        assert entities[0]["text"] == "Ibuprofen"
-        assert entities[0]["label"] == "CHEMICAL"
-        assert entities[0]["cui"] == "C0020740"
+        assert len(entities) == 2
+        assert entities[0]["text"] == "ibuprofen"
+        assert "umls_entities" in entities[0]
+        assert entities[0]["umls_entities"][0]["canonical_name"] == "Ibuprofen"
 
     @patch("pill_checker.services.biomed_ner_client.requests.post")
     def test_extract_entities_empty_text(self, mock_post, ner_client):
@@ -172,37 +167,24 @@ class TestMedicalNERClient:
 
         ingredients = ner_client.find_active_ingredients("Ibuprofen 200mg for headache")
 
-        assert len(ingredients) == 1
-        assert ingredients[0] == "Ibuprofen"
+        assert len(ingredients) == 2
+        assert "Ibuprofen" in ingredients
+        assert "Headache" in ingredients
 
     @patch("pill_checker.services.biomed_ner_client.requests.post")
-    def test_find_chemicals(self, mock_post, ner_client, sample_entities_response):
-        """Test extracting chemical entities with full data."""
+    def test_get_entity_details(self, mock_post, ner_client, sample_entities_response):
+        """Test extracting full entity details."""
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = sample_entities_response
         mock_post.return_value = mock_response
 
-        chemicals = ner_client.find_chemicals("Ibuprofen 200mg for headache")
+        entities = ner_client.get_entity_details("Ibuprofen 200mg for headache")
 
-        assert len(chemicals) == 1
-        assert chemicals[0]["text"] == "Ibuprofen"
-        assert chemicals[0]["canonical_name"] == "Ibuprofen"
-        assert "Advil" in chemicals[0]["aliases"]
-
-    @patch("pill_checker.services.biomed_ner_client.requests.post")
-    def test_find_diseases(self, mock_post, ner_client, sample_entities_response):
-        """Test extracting disease entities."""
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = sample_entities_response
-        mock_post.return_value = mock_response
-
-        diseases = ner_client.find_diseases("Ibuprofen 200mg for headache")
-
-        assert len(diseases) == 1
-        assert diseases[0]["text"] == "headache"
-        assert diseases[0]["canonical_name"] == "Headache"
+        assert len(entities) == 2
+        assert entities[0]["text"] == "ibuprofen"
+        assert entities[0]["umls_entities"][0]["canonical_name"] == "Ibuprofen"
+        assert "Advil" in entities[0]["umls_entities"][0]["aliases"]
 
     def test_get_ner_client_singleton(self, mock_api_url):
         """Test that get_ner_client returns singleton."""

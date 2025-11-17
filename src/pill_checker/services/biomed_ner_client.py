@@ -47,14 +47,14 @@ class MedicalNERClient:
             List of entity dictionaries with structure:
             [
                 {
-                    "text": "Ibuprofen",
-                    "label": "CHEMICAL",
-                    "start": 0,
-                    "end": 9,
-                    "cui": "C0020740",
-                    "canonical_name": "Ibuprofen",
-                    "aliases": ["Advil", "Motrin"],
-                    "definition": "..."
+                    "text": "ibuprofen",
+                    "umls_entities": [
+                        {
+                            "canonical_name": "ibuprofen",
+                            "definition": "A non-steroidal anti-inflammatory agent...",
+                            "aliases": []
+                        }
+                    ]
                 }
             ]
 
@@ -101,46 +101,38 @@ class MedicalNERClient:
 
     def find_active_ingredients(self, text: str) -> List[str]:
         """
-        Extract only the text of chemical/drug entities (backward compatibility).
+        Extract canonical names of medical entities (for backward compatibility).
 
         Args:
             text: Input text to extract active ingredients from
 
         Returns:
-            List of active ingredient names (strings only)
+            List of canonical ingredient names
         """
         entities = self.extract_entities(text)
-        # Filter for CHEMICAL entities and return just the text
-        ingredients = [
-            entity["text"] for entity in entities if entity.get("label") == "CHEMICAL"
-        ]
+        ingredients = []
+
+        for entity in entities:
+            umls_entities = entity.get("umls_entities", [])
+            if umls_entities:
+                # Get canonical name from first UMLS entity
+                canonical_name = umls_entities[0].get("canonical_name")
+                if canonical_name:
+                    ingredients.append(canonical_name)
+
         return ingredients
 
-    def find_chemicals(self, text: str) -> List[Dict[str, Any]]:
+    def get_entity_details(self, text: str) -> List[Dict[str, Any]]:
         """
-        Extract full chemical/drug entity information.
+        Extract entities with their detailed UMLS information.
 
         Args:
-            text: Input text to extract chemicals from
+            text: Input text to extract entities from
 
         Returns:
-            List of chemical entity dictionaries with full metadata
+            List of entities with canonical names, definitions, and aliases
         """
-        entities = self.extract_entities(text)
-        return [entity for entity in entities if entity.get("label") == "CHEMICAL"]
-
-    def find_diseases(self, text: str) -> List[Dict[str, Any]]:
-        """
-        Extract disease entity information.
-
-        Args:
-            text: Input text to extract diseases from
-
-        Returns:
-            List of disease entity dictionaries with full metadata
-        """
-        entities = self.extract_entities(text)
-        return [entity for entity in entities if entity.get("label") == "DISEASE"]
+        return self.extract_entities(text)
 
 
 # Singleton instance
